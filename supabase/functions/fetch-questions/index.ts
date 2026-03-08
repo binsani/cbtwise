@@ -51,9 +51,40 @@ serve(async (req) => {
       "current affairs": "currentaffairs",
     };
 
+    const supportedSubjects = new Set([
+      "english", "mathematics", "commerce", "accounting", "biology",
+      "physics", "chemistry", "englishlit", "government", "crk",
+      "geography", "economics", "irk", "civiledu", "insurance",
+      "currentaffairs", "history",
+    ]);
+
+    const supportedExamTypes = new Set(["waec", "utme", "neco", "post-utme"]);
+
     const subjectSlug = subjectMap[subject.toLowerCase()] || subject.toLowerCase();
     const type = (exam_type || "utme").toLowerCase();
     const count = Math.min(amount || 10, 40);
+
+    if (!supportedSubjects.has(subjectSlug)) {
+      return new Response(
+        JSON.stringify({
+          error: "unsupported_subject",
+          message: `"${subject}" is not available for online practice yet. Please choose a different subject.`,
+          subject,
+        }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!supportedExamTypes.has(type)) {
+      return new Response(
+        JSON.stringify({
+          error: "unsupported_exam",
+          message: `"${exam_type}" is not a supported exam type. Supported types: UTME, WAEC, NECO.`,
+          exam_type,
+        }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // ALOC API v2 endpoint
     const url = `https://questions.aloc.com.ng/api/v2/m/${count}?subject=${subjectSlug}&type=${type}`;
@@ -61,7 +92,7 @@ serve(async (req) => {
     const alocApiKey = Deno.env.get("ALOC_API_KEY");
     if (!alocApiKey) {
       return new Response(
-        JSON.stringify({ error: "ALOC API key not configured" }),
+        JSON.stringify({ error: "config_error", message: "Question service is not configured. Please contact support." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -79,7 +110,10 @@ serve(async (req) => {
       const errorText = await response.text();
       console.error(`ALOC API error: ${response.status} - ${errorText}`);
       return new Response(
-        JSON.stringify({ error: "Failed to fetch questions from provider", details: errorText }),
+        JSON.stringify({
+          error: "provider_error",
+          message: `Questions for "${subject}" could not be loaded right now. Please try again or pick a different subject.`,
+        }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
