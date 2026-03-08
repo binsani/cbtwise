@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Clock, BookOpen, ListChecks, GraduationCap, Shuffle, Play, Info, ArrowLeft } from "lucide-react";
+import { Loader2, Clock, BookOpen, ListChecks, GraduationCap, Shuffle, Play, Info } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 
