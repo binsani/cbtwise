@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Flag, ChevronLeft, ChevronRight, Clock, AlertTriangle, Loader2, CheckCircle2, Calculator } from "lucide-react";
+import { Flag, ChevronLeft, ChevronRight, Clock, AlertTriangle, Loader2, CheckCircle2, Calculator, TriangleAlert } from "lucide-react";
 import { fetchQuestions, type Question } from "@/lib/questions-api";
 import { saveAttempt } from "@/lib/save-attempt";
 import { useSubscriptionGate } from "@/hooks/use-subscription-gate";
