@@ -6,6 +6,7 @@ import { fetchQuestions, type Question } from "@/lib/questions-api";
 import { saveAttempt } from "@/lib/save-attempt";
 import { useSubscriptionGate } from "@/hooks/use-subscription-gate";
 import UpgradeGate from "@/components/UpgradeGate";
+import ExamCalculator from "@/components/ExamCalculator";
 
 interface TaggedQuestion extends Question {
   _subject: string;
