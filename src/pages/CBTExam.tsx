@@ -205,11 +205,24 @@ const CBTExam = () => {
   };
 
   if (gate.loading || loading) {
+    const pct = loadProgress.total > 0 ? Math.round((loadProgress.loaded / loadProgress.total) * 100) : 0;
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-center">
+        <div className="text-center w-72">
           <Loader2 className="mx-auto h-10 w-10 animate-spin text-primary" />
-          <p className="mt-4 text-sm text-muted-foreground">Loading exam questions…</p>
+          <p className="mt-4 text-sm font-medium text-foreground">Loading exam questions…</p>
+          <div className="mt-4 w-full rounded-full bg-muted h-2.5 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-500"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {loadProgress.loaded}/{loadProgress.total} subjects loaded
+            {loadProgress.loaded < loadProgress.total && (
+              <span className="block mt-0.5">Fetching {loadProgress.currentSubject}…</span>
+            )}
+          </p>
         </div>
       </div>
     );
