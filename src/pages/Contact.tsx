@@ -21,7 +21,7 @@ const Contact = () => {
           <div>
             <div className="space-y-6">
               {[
-                { icon: Mail, label: "Email", value: "support@examdrillng.com" },
+                { icon: Mail, label: "Email", value: "support@cbtwise.com" },
                 { icon: Phone, label: "Phone", value: "+234 801 234 5678" },
                 { icon: MapPin, label: "Location", value: "Lagos, Nigeria" },
               ].map((item) => (

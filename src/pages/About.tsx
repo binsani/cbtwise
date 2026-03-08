@@ -7,7 +7,7 @@ const About = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container max-w-3xl py-16">
-        <h1 className="mb-4 font-display text-3xl font-bold md:text-4xl">About ExamDrill NG</h1>
+        <h1 className="mb-4 font-display text-3xl font-bold md:text-4xl">About CBTWise</h1>
         <p className="mb-8 text-lg text-muted-foreground">
           We're on a mission to help every Nigerian student prepare confidently for their exams — from the comfort of their phone.
         </p>
@@ -32,7 +32,7 @@ const About = () => {
         <div className="rounded-xl bg-muted p-6">
           <h2 className="mb-2 font-display text-xl font-bold">Built in Nigeria, for Nigeria</h2>
           <p className="text-sm text-muted-foreground">
-            ExamDrill NG is designed specifically for the Nigerian education system. We focus exclusively on UTME (JAMB), WAEC, and NECO — the three exams that matter most for your academic journey. Our platform is optimised for mobile usage and low data consumption, because we know that's how most Nigerian students access the internet.
+            CBTWise is designed specifically for the Nigerian education system. We focus exclusively on UTME (JAMB), WAEC, and NECO — the three exams that matter most for your academic journey. Our platform is optimised for mobile usage and low data consumption, because we know that's how most Nigerian students access the internet.
           </p>
         </div>
       </main>

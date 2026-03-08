@@ -22,7 +22,7 @@ const Header = () => {
             <GraduationCap className="h-5 w-5 text-primary-foreground" />
           </div>
           <span className="font-display text-xl font-bold text-foreground">
-            ExamDrill <span className="text-primary">NG</span>
+            CBT<span className="text-primary">Wise</span>
           </span>
         </Link>
 

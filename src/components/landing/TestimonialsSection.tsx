@@ -6,7 +6,7 @@ const testimonials = [
     name: "Chioma A.",
     exam: "UTME 2025",
     score: "Scored 312",
-    text: "ExamDrill helped me identify my weak topics in Chemistry. I practised every day for 3 months and it paid off!",
+    text: "CBTWise helped me identify my weak topics in Chemistry. I practised every day for 3 months and it paid off!",
   },
   {
     name: "Emeka O.",
@@ -18,7 +18,7 @@ const testimonials = [
     name: "Fatima M.",
     exam: "NECO 2024",
     score: "All Credits",
-    text: "I used ExamDrill on my phone whenever I had free time. The CBT mock made the real exam feel familiar.",
+    text: "I used CBTWise on my phone whenever I had free time. The CBT mock made the real exam feel familiar.",
   },
 ];
 

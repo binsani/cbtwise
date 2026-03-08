@@ -11,7 +11,7 @@ const CTASection = () => {
             Ready to Start Drilling?
           </h2>
           <p className="mb-6 opacity-90">
-            Join thousands of Nigerian students already preparing smarter with ExamDrill NG.
+            Join thousands of Nigerian students already preparing smarter with CBTWise.
           </p>
           <Button variant="accent" size="xl" asChild>
             <Link to="/signup">
