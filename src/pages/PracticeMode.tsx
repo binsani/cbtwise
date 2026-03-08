@@ -185,11 +185,20 @@ const PracticeMode = () => {
       <Header />
       <main className="container max-w-2xl py-8">
         <div className="mb-6">
-          <ExamBreadcrumb items={[
-            { label: "Exams", href: "/exams" },
-            { label: "Setup", href: `/mock-setup?exam=${exam}` },
-            { label: `${subject} — Practice` },
-          ]} />
+          <div className="flex items-center justify-between">
+            <ExamBreadcrumb items={[
+              { label: "Exams", href: "/exams" },
+              { label: "Setup", href: `/mock-setup?exam=${exam}` },
+              { label: `${subject} — Practice` },
+            ]} />
+            <button
+              onClick={() => setShowEndModal(true)}
+              className="flex items-center gap-1.5 rounded-lg bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/20 transition-colors"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              End Practice
+            </button>
+          </div>
           <h1 className="font-display text-xl font-bold">{subject} — Practice</h1>
           <p className="text-xs text-muted-foreground">
             {exam.toUpperCase()} · {q.topic || "General"}{q.year ? ` · ${q.year}` : ""}
