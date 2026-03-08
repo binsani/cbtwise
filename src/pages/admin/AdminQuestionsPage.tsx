@@ -416,11 +416,31 @@ const AdminQuestionsPage = () => {
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
       ) : (
         <>
+          {/* Bulk action bar */}
+          {selectedIds.size > 0 && (
+            <div className="mb-3 flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
+              <span className="text-sm font-medium">{selectedIds.size} question{selectedIds.size !== 1 ? "s" : ""} selected</span>
+              <Button size="sm" variant="destructive" onClick={() => setBulkDeleteOpen(true)}>
+                <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete Selected
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setSelectedIds(new Set())}>
+                Clear Selection
+              </Button>
+            </div>
+          )}
+
           <div className="rounded-xl border border-border bg-card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
+                    <th className="w-10 px-3 py-3">
+                      <Checkbox
+                        checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Select all"
+                      />
+                    </th>
                     <th className="px-4 py-3 text-left font-semibold">Question</th>
                     <th className="px-4 py-3 text-left font-semibold">Exam</th>
                     <th className="px-4 py-3 text-left font-semibold">Subject</th>
@@ -431,10 +451,17 @@ const AdminQuestionsPage = () => {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {filtered.length === 0 ? (
-                    <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No questions found.</td></tr>
+                    <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No questions found.</td></tr>
                   ) : (
                     filtered.map((q) => (
-                      <tr key={q.id} className="hover:bg-muted/30">
+                      <tr key={q.id} className={`hover:bg-muted/30 ${selectedIds.has(q.id) ? "bg-primary/5" : ""}`}>
+                        <td className="px-3 py-3">
+                          <Checkbox
+                            checked={selectedIds.has(q.id)}
+                            onCheckedChange={() => toggleSelect(q.id)}
+                            aria-label={`Select question`}
+                          />
+                        </td>
                         <td className="px-4 py-3 max-w-[200px] truncate">{q.text}</td>
                         <td className="px-4 py-3"><span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{examMap[q.exam_id]?.slug?.toUpperCase() ?? "—"}</span></td>
                         <td className="px-4 py-3">{subjectMap[q.subject_id]?.name ?? "—"}</td>
