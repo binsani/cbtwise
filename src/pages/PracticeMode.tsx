@@ -12,6 +12,7 @@ import UpgradeGate from "@/components/UpgradeGate";
 
 const PracticeMode = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const exam = searchParams.get("exam") || "utme";
   const subjectsParam = searchParams.get("subjects") || searchParams.get("subject") || "Biology";
   const subjectList = subjectsParam.split(",").map((s) => s.trim()).filter(Boolean);
