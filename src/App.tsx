@@ -15,6 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import ExamSelection from "./pages/ExamSelection";
 import SubjectSelection from "./pages/SubjectSelection";
 import PracticeMode from "./pages/PracticeMode";
+import StudyMode from "./pages/StudyMode";
 import CBTExam from "./pages/CBTExam";
 import MockExamSetup from "./pages/MockExamSetup";
 import Results from "./pages/Results";
