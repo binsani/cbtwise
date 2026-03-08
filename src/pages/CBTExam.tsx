@@ -395,6 +395,13 @@ const CBTExam = () => {
                 <Calculator className="h-3.5 w-3.5" />
                 Calculator
               </button>
+              <button
+                onClick={() => setShowReport(true)}
+                className={`flex items-center gap-1.5 text-xs font-medium text-muted-foreground`}
+              >
+                <TriangleAlert className="h-3.5 w-3.5" />
+                Report
+              </button>
             </div>
           </div>
         </div>
