@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Edit, Trash2, Loader2, Upload, Download, CheckCircle2, XCircle, FileSpreadsheet, Square, CheckSquare, MinusSquare } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Loader2, Upload, Download, CheckCircle2, XCircle, FileSpreadsheet, Square, CheckSquare, MinusSquare, Sparkles } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -151,6 +152,12 @@ const AdminQuestionsPage = () => {
   const [csvValidated, setCsvValidated] = useState<ValidatedRow[]>([]);
   const [importResult, setImportResult] = useState({ success: 0, failed: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // AI generator state
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [aiForm, setAiForm] = useState({ exam_id: "", subject_id: "", topic: "", difficulty: "Medium", count: 5 });
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiResult, setAiResult] = useState<{ saved: number; failed: number; questions: any[] } | null>(null);
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -401,12 +408,56 @@ const AdminQuestionsPage = () => {
   const allSelected = filtered.length > 0 && selectedIds.size === filtered.length;
   const someSelected = selectedIds.size > 0 && selectedIds.size < filtered.length;
 
+  // AI generator
+  const openAiDialog = () => {
+    setAiForm({ exam_id: "", subject_id: "", topic: "", difficulty: "Medium", count: 5 });
+    setAiResult(null);
+    setAiDialogOpen(true);
+  };
+
+  const aiFilteredSubjects = aiForm.exam_id ? subjects.filter((s) => s.exam_id === aiForm.exam_id) : [];
+
+  const handleAiGenerate = async () => {
+    if (!aiForm.exam_id || !aiForm.subject_id) {
+      toast.error("Please select an exam and subject."); return;
+    }
+    setAiGenerating(true);
+    setAiResult(null);
+    try {
+      const examName = examMap[aiForm.exam_id]?.name || "";
+      const subjectName = subjectMap[aiForm.subject_id]?.name || "";
+      const { data, error } = await supabase.functions.invoke("generate-questions", {
+        body: {
+          exam_id: aiForm.exam_id,
+          subject_id: aiForm.subject_id,
+          topic: aiForm.topic || undefined,
+          difficulty: aiForm.difficulty,
+          count: aiForm.count,
+          exam_name: examName,
+          subject_name: subjectName,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setAiResult({ saved: data.saved, failed: data.failed, questions: data.questions });
+      toast.success(`Generated and saved ${data.saved} question${data.saved !== 1 ? "s" : ""}!`);
+      fetchAll();
+    } catch (err: any) {
+      toast.error(err.message || "AI generation failed");
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
   return (
     <AdminLayout
       title="Questions"
       description={`${questions.length} questions in bank`}
       actions={
         <div className="flex gap-2">
+          <Button onClick={openAiDialog} size="sm" variant="secondary">
+            <Sparkles className="mr-1 h-4 w-4" /> AI Generate
+          </Button>
           <Button onClick={openCsvDialog} size="sm" variant="outline">
             <Upload className="mr-1 h-4 w-4" /> Import CSV
           </Button>
@@ -746,6 +797,101 @@ const AdminQuestionsPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* AI Generate Dialog */}
+      <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" /> AI Question Generator
+            </DialogTitle>
+            <DialogDescription>
+              Generate practice questions using AI. Select an exam, subject, and optionally a topic.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label>Exam *</Label>
+              <Select value={aiForm.exam_id} onValueChange={(v) => setAiForm({ ...aiForm, exam_id: v, subject_id: "" })}>
+                <SelectTrigger><SelectValue placeholder="Select exam" /></SelectTrigger>
+                <SelectContent>
+                  {exams.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Subject *</Label>
+              <Select value={aiForm.subject_id} onValueChange={(v) => setAiForm({ ...aiForm, subject_id: v })} disabled={!aiForm.exam_id}>
+                <SelectTrigger><SelectValue placeholder={aiForm.exam_id ? "Select subject" : "Select exam first"} /></SelectTrigger>
+                <SelectContent>
+                  {aiFilteredSubjects.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Topic (optional)</Label>
+              <Input
+                placeholder="e.g. Photosynthesis, Algebra, Civil War..."
+                value={aiForm.topic}
+                onChange={(e) => setAiForm({ ...aiForm, topic: e.target.value })}
+              />
+            </div>
+
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <Label>Difficulty</Label>
+                <Select value={aiForm.difficulty} onValueChange={(v) => setAiForm({ ...aiForm, difficulty: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Easy">Easy</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="Hard">Hard</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-24">
+                <Label>Count</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={aiForm.count}
+                  onChange={(e) => setAiForm({ ...aiForm, count: Math.min(20, Math.max(1, parseInt(e.target.value) || 1)) })}
+                />
+              </div>
+            </div>
+
+            {aiResult && (
+              <div className="rounded-lg border border-border bg-muted/50 p-3 text-sm">
+                <p className="font-medium flex items-center gap-1">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  {aiResult.saved} question{aiResult.saved !== 1 ? "s" : ""} saved
+                  {aiResult.failed > 0 && <span className="text-destructive ml-2">({aiResult.failed} failed)</span>}
+                </p>
+                <ul className="mt-2 space-y-1 max-h-40 overflow-y-auto">
+                  {aiResult.questions.map((q: any, i: number) => (
+                    <li key={i} className="text-xs text-muted-foreground truncate">• {q.text}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAiDialogOpen(false)}>Close</Button>
+            <Button onClick={handleAiGenerate} disabled={aiGenerating || !aiForm.exam_id || !aiForm.subject_id}>
+              {aiGenerating ? <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Generating...</> : <><Sparkles className="mr-1 h-4 w-4" /> Generate</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
