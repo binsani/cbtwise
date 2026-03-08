@@ -86,42 +86,56 @@ serve(async (req) => {
       );
     }
 
-    // ALOC API v2 endpoint
-    const url = `https://questions.aloc.com.ng/api/v2/m/${count}?subject=${subjectSlug}&type=${type}`;
-
-    const alocApiKey = Deno.env.get("ALOC_API_KEY");
-    if (!alocApiKey) {
-      return new Response(
-        JSON.stringify({ error: "config_error", message: "Question service is not configured. Please contact support." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // ALOC API v2 endpoint — max 40 per request, so batch if needed
+    const ALOC_MAX = 40;
+    const batches: number[] = [];
+    let remaining = requestedAmount;
+    while (remaining > 0) {
+      batches.push(Math.min(remaining, ALOC_MAX));
+      remaining -= ALOC_MAX;
     }
 
-    console.log(`Fetching from ALOC: ${url}`);
+    console.log(`Fetching ${requestedAmount} questions for ${subjectSlug} in ${batches.length} batch(es)`);
 
-    const response = await fetch(url, {
-      headers: {
-        Accept: "application/json",
-        AccessToken: alocApiKey,
-      },
-    });
+    const allQuestions: any[] = [];
+    const seenIds = new Set<number>();
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`ALOC API error: ${response.status} - ${errorText}`);
-      return new Response(
-        JSON.stringify({
-          error: "provider_error",
-          message: `Questions for "${subject}" could not be loaded right now. Please try again or pick a different subject.`,
-        }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    for (const batchSize of batches) {
+      const url = `https://questions.aloc.com.ng/api/v2/m/${batchSize}?subject=${subjectSlug}&type=${type}`;
+
+      const response = await fetch(url, {
+        headers: {
+          Accept: "application/json",
+          AccessToken: alocApiKey,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`ALOC API error: ${response.status} - ${errorText}`);
+        // If we already have some questions, continue with what we have
+        if (allQuestions.length > 0) break;
+        return new Response(
+          JSON.stringify({
+            error: "provider_error",
+            message: `Questions for "${subject}" could not be loaded right now. Please try again or pick a different subject.`,
+          }),
+          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const data = await response.json();
+      for (const q of (data.data || [])) {
+        const qId = q.id || allQuestions.length + 1;
+        if (!seenIds.has(qId)) {
+          seenIds.add(qId);
+          allQuestions.push(q);
+        }
+      }
     }
-
-    const data = await response.json();
 
     // Normalise ALOC response into a consistent shape
-    const questions = (data.data || []).map((q: any, i: number) => {
+    const questions = allQuestions.map((q: any, i: number) => {
       const options = [q.option?.a, q.option?.b, q.option?.c, q.option?.d, q.option?.e].filter(Boolean);
       const correctLetter = (q.answer || "").toLowerCase();
       const correctIndex = correctLetter.charCodeAt(0) - 97; // a=0, b=1, ...
