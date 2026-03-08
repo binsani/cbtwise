@@ -31,6 +31,12 @@ const PracticeMode = () => {
   const [showExplanation, setShowExplanation] = useState(false);
   const [bookmarked, setBookmarked] = useState<Set<number>>(new Set());
 
+  interface TaggedQuestion extends Question {
+    _subject: string;
+  }
+
+  const [questions, setQuestions] = useState<TaggedQuestion[]>([]);
+
   useEffect(() => {
     setLoading(true);
     setError(null);
@@ -39,10 +45,10 @@ const PracticeMode = () => {
     Promise.allSettled(subjectList.map((s) => fetchQuestions(s, exam, perSubject)))
       .then((results) => {
         const failed: string[] = [];
-        let combined: Question[] = [];
+        let combined: TaggedQuestion[] = [];
         results.forEach((result, idx) => {
           if (result.status === "fulfilled") {
-            combined = combined.concat(result.value);
+            combined = combined.concat(result.value.map((q) => ({ ...q, _subject: subjectList[idx] })));
           } else {
             failed.push(subjectList[idx]);
           }
