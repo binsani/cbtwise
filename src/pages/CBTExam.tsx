@@ -4,12 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Flag, ChevronLeft, ChevronRight, Clock, AlertTriangle, Loader2 } from "lucide-react";
 import { fetchQuestions, type Question } from "@/lib/questions-api";
 import { saveAttempt } from "@/lib/save-attempt";
+import { useSubscriptionGate } from "@/hooks/use-subscription-gate";
+import UpgradeGate from "@/components/UpgradeGate";
 
 const CBTExam = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const exam = searchParams.get("exam") || "utme";
   const subject = searchParams.get("subject") || "mathematics";
+  const gate = useSubscriptionGate();
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,7 +78,7 @@ const CBTExam = () => {
     return `${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
   };
 
-  if (loading) {
+  if (gate.loading || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
@@ -83,6 +86,18 @@ const CBTExam = () => {
           <p className="mt-4 text-sm text-muted-foreground">Loading exam questions…</p>
         </div>
       </div>
+    );
+  }
+
+  if (!gate.canStartMock) {
+    return (
+      <UpgradeGate
+        title="Mock Exam Limit Reached"
+        message={`Free users can take ${gate.monthlyMocksLimit} mock exams per month. Upgrade to Premium for unlimited access.`}
+        used={gate.monthlyMocksUsed}
+        limit={gate.monthlyMocksLimit}
+        unit="Mock exams"
+      />
     );
   }
 

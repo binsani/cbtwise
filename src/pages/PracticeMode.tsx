@@ -6,11 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Bookmark, ChevronLeft, ChevronRight, CheckCircle2, Loader2 } from "lucide-react";
 import { fetchQuestions, type Question } from "@/lib/questions-api";
 import { saveAttempt } from "@/lib/save-attempt";
+import { useSubscriptionGate } from "@/hooks/use-subscription-gate";
+import UpgradeGate from "@/components/UpgradeGate";
 
 const PracticeMode = () => {
   const [searchParams] = useSearchParams();
   const exam = searchParams.get("exam") || "utme";
   const subject = searchParams.get("subject") || "Biology";
+  const gate = useSubscriptionGate();
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +39,7 @@ const PracticeMode = () => {
       .finally(() => setLoading(false));
   }, [subject, exam]);
 
-  if (loading) {
+  if (gate.loading || loading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -46,6 +49,18 @@ const PracticeMode = () => {
         </main>
         <Footer />
       </div>
+    );
+  }
+
+  if (!gate.canStartPractice) {
+    return (
+      <UpgradeGate
+        title="Daily Question Limit Reached"
+        message={`Free users can practice ${gate.dailyQuestionsLimit} questions per day. Upgrade to Premium for unlimited access.`}
+        used={gate.dailyQuestionsUsed}
+        limit={gate.dailyQuestionsLimit}
+        unit="Questions"
+      />
     );
   }
 
