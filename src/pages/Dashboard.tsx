@@ -175,7 +175,7 @@ const Dashboard = () => {
                 <Link to="/exams">Continue Practicing <ArrowRight className="ml-1 h-4 w-4" /></Link>
               </Button>
               <Button variant="secondary" asChild>
-                <Link to="/mock-exam">Take Mock Exam</Link>
+                <Link to="/mock-setup">Take Mock Exam</Link>
               </Button>
             </div>
 
