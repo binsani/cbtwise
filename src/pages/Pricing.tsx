@@ -26,10 +26,10 @@ const plans = [
   },
   {
     name: "Premium Annual",
-    price: "₦20,000",
+    price: "₦12,000",
     period: "/year",
-    description: "Best value — save ₦10,000",
-    features: ["Everything in Premium Monthly", "Save ₦10,000 per year", "Offline question packs", "Early access to new features", "Dedicated support"],
+    description: "Best value — save ₦6,000",
+    features: ["Everything in Premium Monthly", "Save ₦6,000 per year", "Offline question packs", "Early access to new features", "Dedicated support"],
     limitations: [],
     cta: "Save with Annual",
     popular: false,
