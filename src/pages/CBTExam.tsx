@@ -63,7 +63,10 @@ const CBTExam = () => {
     setFailedSubjects([]);
     setLoadProgress({ loaded: 0, total: subjectList.length, currentSubject: subjectList[0] || "" });
 
-    const perSubject = Math.ceil(totalQuestions / subjectList.length);
+    // Over-request per subject so we can fill the total even if some subjects have fewer
+    const perSubject = subjectList.length === 1
+      ? totalQuestions
+      : Math.ceil(totalQuestions / subjectList.length * 1.5);
 
     // Fetch each subject individually to track progress
     const failed: string[] = [];
@@ -112,9 +115,14 @@ const CBTExam = () => {
             };
           });
         }
-        const shuffled = combined.slice(0, totalQuestions);
-        setQuestions(shuffled);
+        const final = combined.slice(0, totalQuestions);
+        setQuestions(final);
         setStarted(true);
+        if (final.length < totalQuestions) {
+          import("sonner").then(({ toast }) => {
+            toast.info(`${final.length} questions available out of ${totalQuestions} requested. Starting with what's available.`);
+          });
+        }
       })
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
