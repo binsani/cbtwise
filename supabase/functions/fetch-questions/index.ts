@@ -31,6 +31,7 @@ serve(async (req) => {
     }
 
     const subjectMap: Record<string, string> = {
+      "english language": "english",
       "english": "english",
       "mathematics": "mathematics",
       "biology": "biology",
