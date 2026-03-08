@@ -38,11 +38,21 @@ const CBTExam = () => {
       .finally(() => setLoading(false));
   }, [subject, exam]);
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (questions.length === 0) return;
     const score = questions.reduce((acc, q, i) => acc + (answers[i] === q.correct ? 1 : 0), 0);
-    navigate(`/results?score=${score}&total=${questions.length}&exam=${exam}`);
-  }, [answers, navigate, exam, questions]);
+    const elapsed = 30 * 60 - timeLeft;
+    await saveAttempt({
+      examSlug: exam,
+      subject,
+      mode: "mock",
+      totalQuestions: questions.length,
+      correctAnswers: score,
+      timeSpentSeconds: elapsed,
+      answers,
+    });
+    navigate(`/results?score=${score}&total=${questions.length}&exam=${exam}&subject=${encodeURIComponent(subject)}&mode=mock&time=${elapsed}`);
+  }, [answers, navigate, exam, subject, questions, timeLeft]);
 
   useEffect(() => {
     if (!started) return;
