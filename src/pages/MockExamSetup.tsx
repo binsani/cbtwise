@@ -148,8 +148,10 @@ const MockExamSetup = () => {
       shuffleO: String(shuffleOptions),
     });
 
-    if (mode === "practice" || mode === "study") {
+    if (mode === "practice") {
       navigate(`/practice?${params.toString()}`);
+    } else if (mode === "study") {
+      navigate(`/study?${params.toString()}`);
     } else {
       navigate(`/mock-exam?${params.toString()}`);
     }

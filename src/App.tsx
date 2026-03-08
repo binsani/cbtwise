@@ -15,6 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import ExamSelection from "./pages/ExamSelection";
 import SubjectSelection from "./pages/SubjectSelection";
 import PracticeMode from "./pages/PracticeMode";
+import StudyMode from "./pages/StudyMode";
 import CBTExam from "./pages/CBTExam";
 import MockExamSetup from "./pages/MockExamSetup";
 import Results from "./pages/Results";
@@ -59,6 +60,7 @@ const App = () => (
             <Route path="/exams" element={<ProtectedRoute><ExamSelection /></ProtectedRoute>} />
             <Route path="/exams/:examId/subjects" element={<ProtectedRoute><SubjectSelection /></ProtectedRoute>} />
             <Route path="/practice" element={<ProtectedRoute><PracticeMode /></ProtectedRoute>} />
+            <Route path="/study" element={<ProtectedRoute><StudyMode /></ProtectedRoute>} />
             <Route path="/mock-exam" element={<ProtectedRoute><CBTExam /></ProtectedRoute>} />
             <Route path="/mock-setup" element={<ProtectedRoute><MockExamSetup /></ProtectedRoute>} />
             <Route path="/results" element={<ProtectedRoute><Results /></ProtectedRoute>} />
