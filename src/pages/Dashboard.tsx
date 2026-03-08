@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Clock, BarChart3, Trophy, Flame, ArrowRight, Loader2 } from "lucide-react";
+import { BookOpen, Clock, BarChart3, Trophy, Flame, ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDistanceToNow } from "date-fns";
+import { useSubscriptionGate } from "@/hooks/use-subscription-gate";
 import { formatDistanceToNow } from "date-fns";
 
 interface Attempt {
