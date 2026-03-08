@@ -131,6 +131,44 @@ const Dashboard = () => {
           ))}
         </div>
 
+        {/* Usage Limits */}
+        {!gate.loading && !gate.isPremium && (
+          <div className="mb-8 rounded-xl border border-border bg-card p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-display text-sm font-bold">Free Plan Usage</h2>
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs" asChild>
+                <Link to="/pricing"><Sparkles className="h-3.5 w-3.5" /> Upgrade</Link>
+              </Button>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <div className="mb-1.5 flex justify-between text-xs">
+                  <span className="text-muted-foreground">Daily Questions</span>
+                  <span className="font-bold">{gate.dailyQuestionsUsed} / {gate.dailyQuestionsLimit}</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={`h-full rounded-full transition-all ${gate.dailyQuestionsUsed >= gate.dailyQuestionsLimit ? "bg-destructive" : "bg-primary"}`}
+                    style={{ width: `${Math.min(100, (gate.dailyQuestionsUsed / gate.dailyQuestionsLimit) * 100)}%` }}
+                  />
+                </div>
+              </div>
+              <div>
+                <div className="mb-1.5 flex justify-between text-xs">
+                  <span className="text-muted-foreground">Monthly Mock Exams</span>
+                  <span className="font-bold">{gate.monthlyMocksUsed} / {gate.monthlyMocksLimit}</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={`h-full rounded-full transition-all ${gate.monthlyMocksUsed >= gate.monthlyMocksLimit ? "bg-destructive" : "bg-primary"}`}
+                    style={{ width: `${Math.min(100, (gate.monthlyMocksUsed / gate.monthlyMocksLimit) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <div className="mb-6 flex items-center gap-3">
