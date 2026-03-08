@@ -5,10 +5,32 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { Mail, MapPin, Phone, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Contact = () => {
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    const form = e.currentTarget;
+    const name = (form.elements.namedItem("name") as HTMLInputElement).value;
+    const email = (form.elements.namedItem("email") as HTMLInputElement).value;
+    const message = (form.elements.namedItem("message") as HTMLTextAreaElement).value;
+
+    const { error } = await supabase.from("contact_messages" as any).insert({ name, email, message } as any);
+
+    setLoading(false);
+    if (error) {
+      toast.error("Failed to send message. Please try again.");
+      console.error(error);
+      return;
+    }
+    setSent(true);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -45,7 +67,7 @@ const Contact = () => {
                 <p className="text-sm text-muted-foreground">We'll get back to you within 24 hours.</p>
               </div>
             ) : (
-              <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setSent(true); }}>
+              <form className="space-y-4" onSubmit={handleSubmit}>
                 <div>
                   <Label htmlFor="name">Name</Label>
                   <Input id="name" placeholder="Your name" required />
@@ -58,7 +80,9 @@ const Contact = () => {
                   <Label htmlFor="message">Message</Label>
                   <Textarea id="message" placeholder="How can we help?" rows={4} required />
                 </div>
-                <Button type="submit" className="w-full">Send Message</Button>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending…</> : "Send Message"}
+                </Button>
               </form>
             )}
           </div>
