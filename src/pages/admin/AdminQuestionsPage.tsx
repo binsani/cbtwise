@@ -274,7 +274,8 @@ const AdminQuestionsPage = () => {
     e.target.value = "";
   };
 
-  const validateRows = (rows: CsvRow[]): ValidatedRow[] => {
+  const validateRows = (rows: CsvRow[], existingTexts?: Set<string>): ValidatedRow[] => {
+    const seenInCsv = new Set<string>();
     return rows.map((r) => {
       const errors: string[] = [];
 
@@ -282,6 +283,16 @@ const AdminQuestionsPage = () => {
       if (!r.option_a.trim() || !r.option_b.trim() || !r.option_c.trim() || !r.option_d.trim()) {
         errors.push("All 4 options required");
       }
+
+      // Duplicate checks
+      const normalizedText = r.text.trim().toLowerCase();
+      if (normalizedText && existingTexts?.has(normalizedText)) {
+        errors.push("Duplicate: already exists in database");
+      }
+      if (normalizedText && seenInCsv.has(normalizedText)) {
+        errors.push("Duplicate: repeated in CSV");
+      }
+      seenInCsv.add(normalizedText);
 
       const correctMap: Record<string, number> = { A: 0, B: 1, C: 2, D: 3 };
       const correctKey = r.correct_option.trim().toUpperCase();
