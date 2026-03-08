@@ -46,11 +46,8 @@ const HeroSection = () => {
           >
             <Button variant="hero" size="xl" asChild>
               <Link to="/exams">
-                Start Practicing <ArrowRight className="ml-1 h-5 w-5" />
+                Practice Exam <ArrowRight className="ml-1 h-5 w-5" />
               </Link>
-            </Button>
-            <Button variant="hero-outline" size="xl" asChild>
-              <Link to="/exams">Take a Mock Exam</Link>
             </Button>
           </motion.div>
 

@@ -178,12 +178,9 @@ const Dashboard = () => {
             <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
               Start with a quick practice session to see where you stand, then use mock exams to simulate the real thing.
             </p>
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-5">
               <Button asChild>
-                <Link to="/exams"><Zap className="mr-1.5 h-4 w-4" /> Start Practicing</Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link to="/mock-setup">Try a Mock Exam</Link>
+                <Link to="/exams"><Zap className="mr-1.5 h-4 w-4" /> Practice Exam</Link>
               </Button>
             </div>
           </div>
