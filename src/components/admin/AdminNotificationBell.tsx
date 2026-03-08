@@ -60,9 +60,16 @@ export default function AdminNotificationBell() {
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
   };
 
+  const typeConfig: Record<string, { icon: typeof Bell; route: string; color: string }> = {
+    report: { icon: Flag, route: "/admin/reports", color: "text-destructive" },
+    signup: { icon: UserPlus, route: "/admin/users", color: "text-primary" },
+    contact: { icon: MessageSquare, route: "/admin/messages", color: "text-accent-foreground" },
+  };
+
   const handleClick = (n: Notification) => {
-    if (n.type === "report") {
-      navigate("/admin/reports");
+    const config = typeConfig[n.type];
+    if (config) {
+      navigate(config.route);
       setOpen(false);
     }
   };
