@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
-const TAWK_PROPERTY_ID = "YOUR_PROPERTY_ID";
-const TAWK_WIDGET_ID = "YOUR_WIDGET_ID";
+const TAWK_PROPERTY_ID = "69ad4837d4bfc51c39810ea7";
+const TAWK_WIDGET_ID = "default";
 
 const TawkToChat = () => {
   useEffect(() => {
