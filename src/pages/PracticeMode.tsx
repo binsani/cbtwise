@@ -21,10 +21,9 @@ const PracticeMode = () => {
   const shuffleO = searchParams.get("shuffleO") !== "false";
   const gate = useSubscriptionGate();
 
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [failedSubjects, setFailedSubjects] = useState<string[]>([]);
+  interface TaggedQuestion extends Question {
+    _subject: string;
+  }
 
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<Record<number, number>>({});
