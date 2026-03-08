@@ -16,7 +16,7 @@ const plans = [
   },
   {
     name: "Premium Monthly",
-    price: "₦2,500",
+    price: "₦1,500",
     period: "/month",
     description: "Full access for serious exam candidates",
     features: ["Unlimited questions", "Unlimited mock exams", "Full detailed explanations", "Performance analytics", "Weak topic recommendations", "Bookmark & revision mode", "Priority support"],
