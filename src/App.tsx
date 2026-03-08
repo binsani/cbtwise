@@ -16,6 +16,7 @@ import ExamSelection from "./pages/ExamSelection";
 import SubjectSelection from "./pages/SubjectSelection";
 import PracticeMode from "./pages/PracticeMode";
 import CBTExam from "./pages/CBTExam";
+import MockExamSetup from "./pages/MockExamSetup";
 import Results from "./pages/Results";
 import Analytics from "./pages/Analytics";
 import Pricing from "./pages/Pricing";
