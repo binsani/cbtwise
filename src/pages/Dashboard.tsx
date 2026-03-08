@@ -3,10 +3,11 @@ import { Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Clock, BarChart3, Trophy, Flame, ArrowRight, Loader2 } from "lucide-react";
+import { BookOpen, Clock, BarChart3, Trophy, Flame, ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
+import { useSubscriptionGate } from "@/hooks/use-subscription-gate";
 
 interface Attempt {
   exam_slug: string;
@@ -20,6 +21,7 @@ interface Attempt {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const gate = useSubscriptionGate();
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [profile, setProfile] = useState<{ full_name: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -127,6 +129,44 @@ const Dashboard = () => {
             </div>
           ))}
         </div>
+
+        {/* Usage Limits */}
+        {!gate.loading && !gate.isPremium && (
+          <div className="mb-8 rounded-xl border border-border bg-card p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-display text-sm font-bold">Free Plan Usage</h2>
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs" asChild>
+                <Link to="/pricing"><Sparkles className="h-3.5 w-3.5" /> Upgrade</Link>
+              </Button>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <div className="mb-1.5 flex justify-between text-xs">
+                  <span className="text-muted-foreground">Daily Questions</span>
+                  <span className="font-bold">{gate.dailyQuestionsUsed} / {gate.dailyQuestionsLimit}</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={`h-full rounded-full transition-all ${gate.dailyQuestionsUsed >= gate.dailyQuestionsLimit ? "bg-destructive" : "bg-primary"}`}
+                    style={{ width: `${Math.min(100, (gate.dailyQuestionsUsed / gate.dailyQuestionsLimit) * 100)}%` }}
+                  />
+                </div>
+              </div>
+              <div>
+                <div className="mb-1.5 flex justify-between text-xs">
+                  <span className="text-muted-foreground">Monthly Mock Exams</span>
+                  <span className="font-bold">{gate.monthlyMocksUsed} / {gate.monthlyMocksLimit}</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={`h-full rounded-full transition-all ${gate.monthlyMocksUsed >= gate.monthlyMocksLimit ? "bg-destructive" : "bg-primary"}`}
+                    style={{ width: `${Math.min(100, (gate.monthlyMocksUsed / gate.monthlyMocksLimit) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
