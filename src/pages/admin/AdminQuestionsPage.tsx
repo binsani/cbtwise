@@ -344,6 +344,44 @@ const AdminQuestionsPage = () => {
     if (success > 0) fetchAll();
   };
 
+  // Bulk selection helpers
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((q) => q.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkDeleting(true);
+    const ids = Array.from(selectedIds);
+    let deleted = 0;
+    // Delete in batches of 50
+    for (let i = 0; i < ids.length; i += 50) {
+      const batch = ids.slice(i, i + 50);
+      const { error } = await supabase.from("questions").delete().in("id", batch);
+      if (!error) deleted += batch.length;
+    }
+    toast.success(`Deleted ${deleted} question${deleted !== 1 ? "s" : ""}.`);
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    setBulkDeleteOpen(false);
+    fetchAll();
+  };
+
+  const allSelected = filtered.length > 0 && selectedIds.size === filtered.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < filtered.length;
+
   return (
     <AdminLayout
       title="Questions"
