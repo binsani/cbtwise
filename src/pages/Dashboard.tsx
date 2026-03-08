@@ -22,6 +22,7 @@ interface Attempt {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const gate = useSubscriptionGate();
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [profile, setProfile] = useState<{ full_name: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
