@@ -28,8 +28,9 @@ serve(async (req) => {
         JSON.stringify({ error: "server_config_error", message: "Question provider key is missing." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
     const subjectMap: Record<string, string> = {
-      "english language": "english",
       "english": "english",
       "mathematics": "mathematics",
       "biology": "biology",
