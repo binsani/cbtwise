@@ -321,7 +321,7 @@ const StudyMode = () => {
 
               if (showAnswer && isCorrect) {
                 optionClass =
-                  "rounded-xl border-2 border-green-500 bg-green-500/5 p-4 text-sm w-full text-left flex items-center gap-3";
+                  "rounded-xl border-2 border-primary bg-primary/5 p-4 text-sm w-full text-left flex items-center gap-3";
               }
 
               return (
