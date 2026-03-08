@@ -1,63 +1,69 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Bookmark, ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
-
-const sampleQuestions = [
-  {
-    id: 1,
-    text: "The process by which green plants manufacture their food using sunlight is called:",
-    options: ["Respiration", "Photosynthesis", "Transpiration", "Osmosis"],
-    correct: 1,
-    explanation: "Photosynthesis is the process by which green plants use sunlight, carbon dioxide, and water to produce glucose and oxygen.",
-    topic: "Plant Biology",
-  },
-  {
-    id: 2,
-    text: "What is the value of x if 2x + 5 = 15?",
-    options: ["3", "5", "7", "10"],
-    correct: 1,
-    explanation: "2x + 5 = 15 → 2x = 10 → x = 5.",
-    topic: "Algebra",
-  },
-  {
-    id: 3,
-    text: "Which of the following is NOT a function of the liver?",
-    options: ["Bile production", "Detoxification", "Blood filtration", "Pumping blood"],
-    correct: 3,
-    explanation: "The heart pumps blood, not the liver. The liver produces bile, detoxifies harmful substances, and filters blood.",
-    topic: "Human Biology",
-  },
-  {
-    id: 4,
-    text: "The chemical formula for water is:",
-    options: ["H2O2", "H2O", "HO", "OH2"],
-    correct: 1,
-    explanation: "Water has the chemical formula H2O — two hydrogen atoms bonded to one oxygen atom.",
-    topic: "General Chemistry",
-  },
-  {
-    id: 5,
-    text: "Which figure of speech is used in 'The wind whispered through the trees'?",
-    options: ["Simile", "Metaphor", "Personification", "Hyperbole"],
-    correct: 2,
-    explanation: "Personification gives human qualities to non-human things. Here, the wind is said to 'whisper' like a person.",
-    topic: "Figures of Speech",
-  },
-];
+import { Bookmark, ChevronLeft, ChevronRight, CheckCircle2, Loader2 } from "lucide-react";
+import { fetchQuestions, type Question } from "@/lib/questions-api";
 
 const PracticeMode = () => {
   const [searchParams] = useSearchParams();
   const exam = searchParams.get("exam") || "utme";
   const subject = searchParams.get("subject") || "Biology";
+
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<Record<number, number>>({});
   const [showExplanation, setShowExplanation] = useState(false);
   const [bookmarked, setBookmarked] = useState<Set<number>>(new Set());
 
-  const q = sampleQuestions[current];
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    fetchQuestions(subject, exam, 10)
+      .then((qs) => {
+        if (qs.length === 0) {
+          setError("No questions available for this subject yet.");
+        } else {
+          setQuestions(qs);
+        }
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [subject, exam]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container flex max-w-2xl flex-col items-center justify-center py-24">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="mt-4 text-sm text-muted-foreground">Loading questions…</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container max-w-2xl py-12 text-center">
+          <p className="text-destructive font-medium">{error || "No questions found."}</p>
+          <Button variant="outline" className="mt-4" asChild>
+            <Link to={`/exams/${exam}/subjects`}>← Back to subjects</Link>
+          </Button>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const q = questions[current];
   const answered = selected[current] !== undefined;
 
   const handleSelect = (optIdx: number) => {
@@ -67,7 +73,7 @@ const PracticeMode = () => {
   };
 
   const next = () => {
-    if (current < sampleQuestions.length - 1) {
+    if (current < questions.length - 1) {
       setCurrent(current + 1);
       setShowExplanation(false);
     }
@@ -94,14 +100,16 @@ const PracticeMode = () => {
         <div className="mb-6">
           <Link to={`/exams/${exam}/subjects`} className="text-sm text-primary hover:underline">← Back to subjects</Link>
           <h1 className="mt-2 font-display text-xl font-bold">{subject} — Practice</h1>
-          <p className="text-xs text-muted-foreground">{exam.toUpperCase()} · {q.topic}</p>
+          <p className="text-xs text-muted-foreground">
+            {exam.toUpperCase()} · {q.topic || "General"}{q.year ? ` · ${q.year}` : ""}
+          </p>
         </div>
 
         {/* Question Card */}
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
             <span className="text-sm font-semibold text-muted-foreground">
-              Question {current + 1} of {sampleQuestions.length}
+              Question {current + 1} of {questions.length}
             </span>
             <button onClick={toggleBookmark} className="text-muted-foreground hover:text-accent">
               <Bookmark className={`h-5 w-5 ${bookmarked.has(q.id) ? "fill-accent text-accent" : ""}`} />
@@ -140,7 +148,7 @@ const PracticeMode = () => {
             })}
           </div>
 
-          {showExplanation && (
+          {showExplanation && q.explanation && (
             <div className="mt-6 rounded-xl bg-muted p-4">
               <h4 className="mb-1 font-display text-sm font-bold">Explanation</h4>
               <p className="text-sm text-muted-foreground">{q.explanation}</p>
@@ -153,12 +161,14 @@ const PracticeMode = () => {
           <Button variant="outline" onClick={prev} disabled={current === 0}>
             <ChevronLeft className="mr-1 h-4 w-4" /> Previous
           </Button>
-          {current === sampleQuestions.length - 1 && Object.keys(selected).length === sampleQuestions.length ? (
+          {current === questions.length - 1 && Object.keys(selected).length === questions.length ? (
             <Button asChild>
-              <Link to="/results">View Results</Link>
+              <Link to={`/results?score=${Object.entries(selected).filter(([i, a]) => a === questions[Number(i)].correct).length}&total=${questions.length}&exam=${exam}`}>
+                View Results
+              </Link>
             </Button>
           ) : (
-            <Button onClick={next} disabled={current === sampleQuestions.length - 1}>
+            <Button onClick={next} disabled={current === questions.length - 1}>
               Next <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
           )}
