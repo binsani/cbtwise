@@ -438,6 +438,16 @@ const CBTExam = () => {
       {/* Calculator */}
       {showCalculator && <ExamCalculator onClose={() => setShowCalculator(false)} />}
 
+      {/* Report Question Modal */}
+      {showReport && (
+        <ReportQuestionModal
+          questionText={q.text}
+          subject={q._subject}
+          examSlug={exam}
+          onClose={() => setShowReport(false)}
+        />
+      )}
+
       {/* Submit Modal */}
       {showSubmitModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/50 p-4">

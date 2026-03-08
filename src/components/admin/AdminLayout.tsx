@@ -32,6 +32,7 @@ const navItems = [
   { title: "Subscriptions", url: "/admin/subscriptions", icon: CreditCard },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
   { title: "Messages", url: "/admin/messages", icon: MessageSquare },
+  { title: "Reports", url: "/admin/reports", icon: Flag },
 ];
 
 function AdminSidebar() {
