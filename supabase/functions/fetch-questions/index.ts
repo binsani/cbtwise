@@ -6,6 +6,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const alocApiKey = Deno.env.get("ALOC_API_KEY");
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -21,7 +23,13 @@ serve(async (req) => {
       );
     }
 
-    // Map friendly subject names to ALOC API subject slugs
+    if (!alocApiKey) {
+      return new Response(
+        JSON.stringify({ error: "server_config_error", message: "Question provider key is missing." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const subjectMap: Record<string, string> = {
       "english language": "english",
       "english": "english",
@@ -60,7 +68,11 @@ serve(async (req) => {
 
     const supportedExamTypes = new Set(["waec", "utme", "neco", "post-utme"]);
 
-    const subjectSlug = subjectMap[subject.toLowerCase()] || subject.toLowerCase();
+    const normalizedSubject = subject.toLowerCase().trim().replace(/[_\s]+/g, " ");
+    const subjectSlug =
+      subjectMap[normalizedSubject] ||
+      subjectMap[normalizedSubject.replace(/\s+/g, "_")] ||
+      normalizedSubject.replace(/\s+/g, "");
     const type = (exam_type || "utme").toLowerCase();
     const requestedAmount = Math.max(amount || 10, 1);
 
