@@ -6,6 +6,7 @@ import { ArrowRight } from "lucide-react";
 const exams = [
   {
     name: "UTME (JAMB)",
+    slug: "utme",
     description: "Unified Tertiary Matriculation Examination — your gateway to university admission in Nigeria.",
     subjects: "English, Mathematics, Physics, Chemistry, Biology, Economics, Government & more",
     color: "bg-exam-utme",
@@ -13,6 +14,7 @@ const exams = [
   },
   {
     name: "WAEC",
+    slug: "waec",
     description: "West African Examinations Council — O'Level certification recognised across West Africa.",
     subjects: "English, Mathematics, Physics, Chemistry, Biology, Commerce, Literature & more",
     color: "bg-exam-waec",
@@ -20,6 +22,7 @@ const exams = [
   },
   {
     name: "NECO",
+    slug: "neco",
     description: "National Examinations Council — Nigeria's national senior school certificate examination.",
     subjects: "English, Mathematics, Physics, Chemistry, Biology, Civic Education & more",
     color: "bg-exam-neco",
@@ -56,7 +59,7 @@ const ExamCards = () => {
               </p>
               <div className="mb-4 text-sm font-semibold text-primary">{exam.questions} past questions</div>
               <Button variant="outline" size="sm" asChild className="w-full">
-                <Link to="/exams">
+                <Link to={`/mock-setup?exam=${exam.slug}`}>
                   Practice Now <ArrowRight className="ml-1 h-3.5 w-3.5" />
                 </Link>
               </Button>
