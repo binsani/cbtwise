@@ -53,10 +53,19 @@ const AdminOverview = () => {
         totalMessages: messagesRes.count ?? 0,
       });
 
-      if (recentAttemptsRes.data) {
+      if (recentAttemptsRes.data && recentAttemptsRes.data.length > 0) {
+        // Fetch user names for recent attempts
+        const userIds = [...new Set(recentAttemptsRes.data.map((a) => a.user_id))];
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", userIds);
+        const nameMap: Record<string, string> = {};
+        profiles?.forEach((p) => { nameMap[p.user_id] = p.full_name || "Unknown User"; });
+
         setActivity(
           recentAttemptsRes.data.map((a) => ({
-            user: a.user_id.slice(0, 8) + "…",
+            user: nameMap[a.user_id] || "Unknown User",
             action: `${a.mode === "mock" ? "Mock" : "Practice"}: ${a.subject} (${a.exam_slug.toUpperCase()}) — ${a.total_questions}q`,
             time: getTimeAgo(new Date(a.completed_at)),
           }))
