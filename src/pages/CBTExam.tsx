@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Flag, ChevronLeft, ChevronRight, Clock, AlertTriangle, Loader2, CheckCircle2, Calculator } from "lucide-react";
+import { Flag, ChevronLeft, ChevronRight, Clock, AlertTriangle, Loader2, CheckCircle2, Calculator, TriangleAlert } from "lucide-react";
 import { fetchQuestions, type Question } from "@/lib/questions-api";
 import { saveAttempt } from "@/lib/save-attempt";
 import { useSubscriptionGate } from "@/hooks/use-subscription-gate";
 import UpgradeGate from "@/components/UpgradeGate";
 import ExamCalculator from "@/components/ExamCalculator";
+import ReportQuestionModal from "@/components/ReportQuestionModal";
 
 interface TaggedQuestion extends Question {
   _subject: string;
@@ -40,6 +41,7 @@ const CBTExam = () => {
   const [started, setStarted] = useState(false);
   const [activeSubjectTab, setActiveSubjectTab] = useState<string | null>(null);
   const [showCalculator, setShowCalculator] = useState(false);
+  const [showReport, setShowReport] = useState(false);
 
   // Build subject → question index map
   const subjectQuestionMap = useMemo(() => {
@@ -219,6 +221,13 @@ const CBTExam = () => {
               <Calculator className="h-3.5 w-3.5" />
               Calculator
             </button>
+            <button
+              onClick={() => setShowReport(true)}
+              className="hidden sm:flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
+            >
+              <TriangleAlert className="h-3.5 w-3.5" />
+              Report
+            </button>
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden sm:inline text-xs text-muted-foreground font-medium">
@@ -386,6 +395,13 @@ const CBTExam = () => {
                 <Calculator className="h-3.5 w-3.5" />
                 Calculator
               </button>
+              <button
+                onClick={() => setShowReport(true)}
+                className={`flex items-center gap-1.5 text-xs font-medium text-muted-foreground`}
+              >
+                <TriangleAlert className="h-3.5 w-3.5" />
+                Report
+              </button>
             </div>
           </div>
         </div>
@@ -421,6 +437,16 @@ const CBTExam = () => {
 
       {/* Calculator */}
       {showCalculator && <ExamCalculator onClose={() => setShowCalculator(false)} />}
+
+      {/* Report Question Modal */}
+      {showReport && (
+        <ReportQuestionModal
+          questionText={q.text}
+          subject={q._subject}
+          examSlug={exam}
+          onClose={() => setShowReport(false)}
+        />
+      )}
 
       {/* Submit Modal */}
       {showSubmitModal && (
