@@ -35,11 +35,7 @@ const PracticeMode = () => {
   const [showExplanation, setShowExplanation] = useState(false);
   const [bookmarked, setBookmarked] = useState<Set<number>>(new Set());
 
-  interface TaggedQuestion extends Question {
-    _subject: string;
-  }
 
-  const [questions, setQuestions] = useState<TaggedQuestion[]>([]);
 
   useEffect(() => {
     setLoading(true);
