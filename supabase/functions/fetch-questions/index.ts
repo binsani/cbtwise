@@ -67,7 +67,11 @@ serve(async (req) => {
 
     const supportedExamTypes = new Set(["waec", "utme", "neco", "post-utme"]);
 
-    const subjectSlug = subjectMap[subject.toLowerCase()] || subject.toLowerCase();
+    const normalizedSubject = subject.toLowerCase().trim().replace(/[_\s]+/g, " ");
+    const subjectSlug =
+      subjectMap[normalizedSubject] ||
+      subjectMap[normalizedSubject.replace(/\s+/g, "_")] ||
+      normalizedSubject.replace(/\s+/g, "");
     const type = (exam_type || "utme").toLowerCase();
     const requestedAmount = Math.max(amount || 10, 1);
 
