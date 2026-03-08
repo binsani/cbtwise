@@ -86,22 +86,19 @@ serve(async (req) => {
       );
     }
 
-    // ALOC API v2 endpoint — max 40 per request, so batch if needed
+    // ALOC API v2 endpoint — max 40 per request, randomized each call
+    // Make multiple attempts to collect enough unique questions
     const ALOC_MAX = 40;
-    const batches: number[] = [];
-    let remaining = requestedAmount;
-    while (remaining > 0) {
-      batches.push(Math.min(remaining, ALOC_MAX));
-      remaining -= ALOC_MAX;
-    }
+    const MAX_RETRIES = 5; // max rounds to try filling the requested amount
 
-    console.log(`Fetching ${requestedAmount} questions for ${subjectSlug} in ${batches.length} batch(es)`);
+    console.log(`Fetching ${requestedAmount} questions for ${subjectSlug}`);
 
     const allQuestions: any[] = [];
     const seenIds = new Set<number>();
 
-    for (const batchSize of batches) {
-      const url = `https://questions.aloc.com.ng/api/v2/m/${batchSize}?subject=${subjectSlug}&type=${type}`;
+    for (let attempt = 0; attempt < MAX_RETRIES && allQuestions.length < requestedAmount; attempt++) {
+      const url = `https://questions.aloc.com.ng/api/v2/m/${ALOC_MAX}?subject=${subjectSlug}&type=${type}`;
+      console.log(`Fetching from ALOC: ${url}`);
 
       const response = await fetch(url, {
         headers: {
@@ -113,7 +110,6 @@ serve(async (req) => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`ALOC API error: ${response.status} - ${errorText}`);
-        // If we already have some questions, continue with what we have
         if (allQuestions.length > 0) break;
         return new Response(
           JSON.stringify({
@@ -125,13 +121,18 @@ serve(async (req) => {
       }
 
       const data = await response.json();
+      let newThisRound = 0;
       for (const q of (data.data || [])) {
         const qId = q.id || allQuestions.length + 1;
         if (!seenIds.has(qId)) {
           seenIds.add(qId);
           allQuestions.push(q);
+          newThisRound++;
         }
       }
+      console.log(`Attempt ${attempt + 1}: got ${newThisRound} new unique (total: ${allQuestions.length}/${requestedAmount})`);
+      // If no new questions were found, the pool is exhausted
+      if (newThisRound === 0) break;
     }
 
     // Normalise ALOC response into a consistent shape
