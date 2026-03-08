@@ -34,10 +34,26 @@ const PracticeMode = () => {
   useEffect(() => {
     setLoading(true);
     setError(null);
+    setFailedSubjects([]);
     const perSubject = Math.ceil(totalQuestions / subjectList.length);
-    Promise.all(subjectList.map((s) => fetchQuestions(s, exam, perSubject)))
+    Promise.allSettled(subjectList.map((s) => fetchQuestions(s, exam, perSubject)))
       .then((results) => {
-        let combined = results.flat();
+        const failed: string[] = [];
+        let combined: Question[] = [];
+        results.forEach((result, idx) => {
+          if (result.status === "fulfilled") {
+            combined = combined.concat(result.value);
+          } else {
+            failed.push(subjectList[idx]);
+          }
+        });
+        setFailedSubjects(failed);
+        if (combined.length === 0) {
+          setError(failed.length > 0
+            ? `Could not load questions for: ${failed.join(", ")}. Please try different subjects.`
+            : "No questions available for the selected subject(s).");
+          return;
+        }
         if (shuffleQ) combined = combined.sort(() => Math.random() - 0.5);
         if (shuffleO) {
           combined = combined.map((q) => {
@@ -45,14 +61,8 @@ const PracticeMode = () => {
             return { ...q, options: indices.map((i) => q.options[i]), correct: indices.indexOf(q.correct) };
           });
         }
-        const trimmed = combined.slice(0, totalQuestions);
-        if (trimmed.length === 0) {
-          setError("No questions available for the selected subject(s).");
-        } else {
-          setQuestions(trimmed);
-        }
+        setQuestions(combined.slice(0, totalQuestions));
       })
-      .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subjectsParam, exam, totalQuestions]);
