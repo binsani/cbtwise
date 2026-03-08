@@ -4,6 +4,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Clock, BarChart3, Trophy, Flame, ArrowRight, Loader2, Sparkles, GraduationCap, Zap } from "lucide-react";
+import DailyQuote from "@/components/dashboard/DailyQuote";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
@@ -116,6 +117,9 @@ const Dashboard = () => {
           <h1 className="font-display text-2xl font-bold md:text-3xl">Welcome back, {firstName}! 👋</h1>
           <p className="text-muted-foreground">Here's your study progress.</p>
         </div>
+
+        {/* Daily Motivational Quote */}
+        {totalTests > 0 && <DailyQuote />}
 
         {/* Stats */}
         <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
