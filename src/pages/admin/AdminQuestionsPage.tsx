@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Edit, Trash2, Loader2, Upload, Download, CheckCircle2, XCircle, FileSpreadsheet } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Loader2, Upload, Download, CheckCircle2, XCircle, FileSpreadsheet, Square, CheckSquare, MinusSquare } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
