@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Flag, ChevronLeft, ChevronRight, Clock, AlertTriangle, Loader2, CheckCircle2, Calculator, TriangleAlert } from "lucide-react";
+import { Flag, ChevronLeft, ChevronRight, Clock, AlertTriangle, Loader2, CheckCircle2, Calculator, TriangleAlert, LogOut } from "lucide-react";
 import { fetchQuestions, type Question } from "@/lib/questions-api";
 import { saveAttempt } from "@/lib/save-attempt";
 import { useSubscriptionGate } from "@/hooks/use-subscription-gate";
@@ -42,6 +42,7 @@ const CBTExam = () => {
   const [activeSubjectTab, setActiveSubjectTab] = useState<string | null>(null);
   const [showCalculator, setShowCalculator] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [showEndModal, setShowEndModal] = useState(false);
 
   // Build subject → question index map
   const subjectQuestionMap = useMemo(() => {
@@ -235,6 +236,13 @@ const CBTExam = () => {
       <div className="sticky top-0 z-50 border-b border-border bg-card shadow-sm">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowEndModal(true)}
+              className="flex items-center gap-1.5 rounded-lg bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/20 transition-colors"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              End Exam
+            </button>
             <div>
               <div className="font-display text-sm font-bold">{exam.toUpperCase()} Mock Exam</div>
               {failedSubjects.length > 0 && (
@@ -513,6 +521,29 @@ const CBTExam = () => {
               </Button>
               <Button className="flex-1" onClick={handleSubmit}>
                 Submit
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* End Exam Modal */}
+      {showEndModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/50 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl">
+            <div className="mb-4 flex items-center gap-3">
+              <LogOut className="h-6 w-6 text-destructive" />
+              <h3 className="font-display text-lg font-bold">End Exam?</h3>
+            </div>
+            <p className="mb-2 text-sm text-muted-foreground">
+              Are you sure you want to end this exam? Your progress will be lost and no results will be saved.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setShowEndModal(false)}>
+                Continue Exam
+              </Button>
+              <Button variant="destructive" className="flex-1" onClick={() => navigate(-1)}>
+                End Exam
               </Button>
             </div>
           </div>

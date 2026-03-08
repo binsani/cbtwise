@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import ExamBreadcrumb from "@/components/ExamBreadcrumb";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Bookmark, ChevronLeft, ChevronRight, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
+import { Bookmark, ChevronLeft, ChevronRight, CheckCircle2, Loader2, AlertTriangle, LogOut } from "lucide-react";
 import { fetchQuestions, type Question } from "@/lib/questions-api";
 import { saveAttempt } from "@/lib/save-attempt";
 import { useSubscriptionGate } from "@/hooks/use-subscription-gate";
@@ -12,6 +12,7 @@ import UpgradeGate from "@/components/UpgradeGate";
 
 const PracticeMode = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const exam = searchParams.get("exam") || "utme";
   const subjectsParam = searchParams.get("subjects") || searchParams.get("subject") || "Biology";
   const subjectList = subjectsParam.split(",").map((s) => s.trim()).filter(Boolean);
@@ -34,6 +35,7 @@ const PracticeMode = () => {
   const [selected, setSelected] = useState<Record<number, number>>({});
   const [showExplanation, setShowExplanation] = useState(false);
   const [bookmarked, setBookmarked] = useState<Set<number>>(new Set());
+  const [showEndModal, setShowEndModal] = useState(false);
 
 
   useEffect(() => {
@@ -183,11 +185,20 @@ const PracticeMode = () => {
       <Header />
       <main className="container max-w-2xl py-8">
         <div className="mb-6">
-          <ExamBreadcrumb items={[
-            { label: "Exams", href: "/exams" },
-            { label: "Setup", href: `/mock-setup?exam=${exam}` },
-            { label: `${subject} — Practice` },
-          ]} />
+          <div className="flex items-center justify-between">
+            <ExamBreadcrumb items={[
+              { label: "Exams", href: "/exams" },
+              { label: "Setup", href: `/mock-setup?exam=${exam}` },
+              { label: `${subject} — Practice` },
+            ]} />
+            <button
+              onClick={() => setShowEndModal(true)}
+              className="flex items-center gap-1.5 rounded-lg bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/20 transition-colors"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              End Practice
+            </button>
+          </div>
           <h1 className="font-display text-xl font-bold">{subject} — Practice</h1>
           <p className="text-xs text-muted-foreground">
             {exam.toUpperCase()} · {q.topic || "General"}{q.year ? ` · ${q.year}` : ""}
@@ -293,6 +304,29 @@ const PracticeMode = () => {
         </div>
       </main>
       <Footer />
+
+      {/* End Practice Modal */}
+      {showEndModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/50 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl">
+            <div className="mb-4 flex items-center gap-3">
+              <LogOut className="h-6 w-6 text-destructive" />
+              <h3 className="font-display text-lg font-bold">End Practice?</h3>
+            </div>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Are you sure you want to end this practice session? Your progress will be lost.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setShowEndModal(false)}>
+                Continue
+              </Button>
+              <Button variant="destructive" className="flex-1" onClick={() => navigate(-1)}>
+                End Practice
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
