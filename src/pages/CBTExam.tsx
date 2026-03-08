@@ -63,7 +63,10 @@ const CBTExam = () => {
     setFailedSubjects([]);
     setLoadProgress({ loaded: 0, total: subjectList.length, currentSubject: subjectList[0] || "" });
 
-    const perSubject = Math.ceil(totalQuestions / subjectList.length);
+    // Over-request per subject so we can fill the total even if some subjects have fewer
+    const perSubject = subjectList.length === 1
+      ? totalQuestions
+      : Math.ceil(totalQuestions / subjectList.length * 1.5);
 
     // Fetch each subject individually to track progress
     const failed: string[] = [];
