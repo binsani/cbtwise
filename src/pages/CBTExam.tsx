@@ -26,6 +26,7 @@ const CBTExam = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [failedSubjects, setFailedSubjects] = useState<string[]>([]);
 
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
@@ -34,17 +35,31 @@ const CBTExam = () => {
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [started, setStarted] = useState(false);
 
-  // Fetch questions for all selected subjects
   useEffect(() => {
     setLoading(true);
     setError(null);
+    setFailedSubjects([]);
 
     const perSubject = Math.ceil(totalQuestions / subjectList.length);
 
-    Promise.all(subjectList.map((sub) => fetchQuestions(sub, exam, perSubject)))
+    Promise.allSettled(subjectList.map((sub) => fetchQuestions(sub, exam, perSubject)))
       .then((results) => {
-        // Combine, shuffle, and trim to exact count
-        let combined = results.flat();
+        const failed: string[] = [];
+        let combined: Question[] = [];
+        results.forEach((result, idx) => {
+          if (result.status === "fulfilled") {
+            combined = combined.concat(result.value);
+          } else {
+            failed.push(subjectList[idx]);
+          }
+        });
+        setFailedSubjects(failed);
+        if (combined.length === 0) {
+          setError(failed.length > 0
+            ? `Could not load questions for: ${failed.join(", ")}. Please try different subjects.`
+            : "No questions available. Please try another subject.");
+          return;
+        }
         if (shuffleQ) combined = combined.sort(() => Math.random() - 0.5);
         if (shuffleO) {
           combined = combined.map((q) => {
@@ -57,14 +72,9 @@ const CBTExam = () => {
           });
         }
         const shuffled = combined.slice(0, totalQuestions);
-        if (shuffled.length === 0) {
-          setError("No questions available. Please try another subject.");
-        } else {
-          setQuestions(shuffled);
-          setStarted(true);
-        }
+        setQuestions(shuffled);
+        setStarted(true);
       })
-      .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subjectsParam, exam, totalQuestions]);
@@ -158,6 +168,9 @@ const CBTExam = () => {
           <div>
             <div className="font-display text-sm font-bold">{exam.toUpperCase()} Mock Exam</div>
             <div className="text-xs text-muted-foreground">{subjectList.length} subjects · {questions.length} questions</div>
+            {failedSubjects.length > 0 && (
+              <div className="text-xs text-accent font-medium">⚠ {failedSubjects.join(", ")} unavailable</div>
+            )}
           </div>
           <div className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold ${isUrgent ? "bg-destructive/10 text-destructive" : "bg-muted"}`}>
             <Clock className="h-4 w-4" />

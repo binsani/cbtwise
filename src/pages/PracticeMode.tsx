@@ -4,7 +4,7 @@ import ExamBreadcrumb from "@/components/ExamBreadcrumb";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Bookmark, ChevronLeft, ChevronRight, CheckCircle2, Loader2 } from "lucide-react";
+import { Bookmark, ChevronLeft, ChevronRight, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
 import { fetchQuestions, type Question } from "@/lib/questions-api";
 import { saveAttempt } from "@/lib/save-attempt";
 import { useSubscriptionGate } from "@/hooks/use-subscription-gate";
@@ -24,6 +24,7 @@ const PracticeMode = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [failedSubjects, setFailedSubjects] = useState<string[]>([]);
 
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<Record<number, number>>({});
@@ -33,10 +34,26 @@ const PracticeMode = () => {
   useEffect(() => {
     setLoading(true);
     setError(null);
+    setFailedSubjects([]);
     const perSubject = Math.ceil(totalQuestions / subjectList.length);
-    Promise.all(subjectList.map((s) => fetchQuestions(s, exam, perSubject)))
+    Promise.allSettled(subjectList.map((s) => fetchQuestions(s, exam, perSubject)))
       .then((results) => {
-        let combined = results.flat();
+        const failed: string[] = [];
+        let combined: Question[] = [];
+        results.forEach((result, idx) => {
+          if (result.status === "fulfilled") {
+            combined = combined.concat(result.value);
+          } else {
+            failed.push(subjectList[idx]);
+          }
+        });
+        setFailedSubjects(failed);
+        if (combined.length === 0) {
+          setError(failed.length > 0
+            ? `Could not load questions for: ${failed.join(", ")}. Please try different subjects.`
+            : "No questions available for the selected subject(s).");
+          return;
+        }
         if (shuffleQ) combined = combined.sort(() => Math.random() - 0.5);
         if (shuffleO) {
           combined = combined.map((q) => {
@@ -44,14 +61,8 @@ const PracticeMode = () => {
             return { ...q, options: indices.map((i) => q.options[i]), correct: indices.indexOf(q.correct) };
           });
         }
-        const trimmed = combined.slice(0, totalQuestions);
-        if (trimmed.length === 0) {
-          setError("No questions available for the selected subject(s).");
-        } else {
-          setQuestions(trimmed);
-        }
+        setQuestions(combined.slice(0, totalQuestions));
       })
-      .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subjectsParam, exam, totalQuestions]);
@@ -141,6 +152,19 @@ const PracticeMode = () => {
             {exam.toUpperCase()} · {q.topic || "General"}{q.year ? ` · ${q.year}` : ""}
           </p>
         </div>
+
+        {failedSubjects.length > 0 && (
+          <div className="mb-4 flex items-start gap-3 rounded-xl border border-accent/30 bg-accent/5 p-4">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+            <div>
+              <p className="text-sm font-medium">Some subjects couldn't be loaded</p>
+              <p className="text-xs text-muted-foreground">
+                Questions for <span className="font-semibold">{failedSubjects.join(", ")}</span> were unavailable.
+                Continuing with {questions.length} questions from the remaining subjects.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Question Card */}
         <div className="rounded-2xl border border-border bg-card p-6">
