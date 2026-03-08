@@ -52,10 +52,21 @@ serve(async (req) => {
     // ALOC API v2 endpoint
     const url = `https://questions.aloc.com.ng/api/v2/m/${count}?subject=${subjectSlug}&type=${type}`;
 
+    const alocApiKey = Deno.env.get("ALOC_API_KEY");
+    if (!alocApiKey) {
+      return new Response(
+        JSON.stringify({ error: "ALOC API key not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     console.log(`Fetching from ALOC: ${url}`);
 
     const response = await fetch(url, {
-      headers: { Accept: "application/json" },
+      headers: {
+        Accept: "application/json",
+        AccessToken: alocApiKey,
+      },
     });
 
     if (!response.ok) {
