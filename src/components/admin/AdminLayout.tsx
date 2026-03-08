@@ -21,6 +21,7 @@ import {
   MessageSquare,
   ArrowLeft,
   Flag,
+  Bell,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import AdminNotificationBell from "./AdminNotificationBell";
