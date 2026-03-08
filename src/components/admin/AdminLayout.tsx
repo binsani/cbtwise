@@ -20,6 +20,7 @@ import {
   BookOpen,
   MessageSquare,
   ArrowLeft,
+  Flag,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
