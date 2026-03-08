@@ -62,7 +62,7 @@ serve(async (req) => {
 
     const subjectSlug = subjectMap[subject.toLowerCase()] || subject.toLowerCase();
     const type = (exam_type || "utme").toLowerCase();
-    const count = Math.min(amount || 10, 40);
+    const requestedAmount = Math.max(amount || 10, 1);
 
     if (!supportedSubjects.has(subjectSlug)) {
       return new Response(
