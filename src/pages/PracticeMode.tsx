@@ -24,6 +24,7 @@ const PracticeMode = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [failedSubjects, setFailedSubjects] = useState<string[]>([]);
 
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<Record<number, number>>({});
