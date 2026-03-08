@@ -32,6 +32,7 @@ const CBTExam = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [failedSubjects, setFailedSubjects] = useState<string[]>([]);
+  const [loadProgress, setLoadProgress] = useState<{ loaded: number; total: number; currentSubject: string }>({ loaded: 0, total: 0, currentSubject: "" });
 
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
@@ -60,19 +61,37 @@ const CBTExam = () => {
     setLoading(true);
     setError(null);
     setFailedSubjects([]);
+    setLoadProgress({ loaded: 0, total: subjectList.length, currentSubject: subjectList[0] || "" });
 
     const perSubject = Math.ceil(totalQuestions / subjectList.length);
 
-    Promise.allSettled(subjectList.map((sub) => fetchQuestions(sub, exam, perSubject)))
+    // Fetch each subject individually to track progress
+    const failed: string[] = [];
+    let combined: TaggedQuestion[] = [];
+
+    const fetchSubject = async (sub: string, idx: number) => {
+      try {
+        const qs = await fetchQuestions(sub, exam, perSubject);
+        const tagged = qs.map((q) => ({ ...q, _subject: sub }));
+        return { status: "fulfilled" as const, tagged };
+      } catch {
+        return { status: "rejected" as const, subject: sub };
+      } finally {
+        setLoadProgress((prev) => ({
+          loaded: prev.loaded + 1,
+          total: prev.total,
+          currentSubject: subjectList[Math.min(idx + 1, subjectList.length - 1)] || "",
+        }));
+      }
+    };
+
+    Promise.all(subjectList.map((sub, idx) => fetchSubject(sub, idx)))
       .then((results) => {
-        const failed: string[] = [];
-        let combined: TaggedQuestion[] = [];
-        results.forEach((result, idx) => {
+        results.forEach((result) => {
           if (result.status === "fulfilled") {
-            const tagged = result.value.map((q) => ({ ...q, _subject: subjectList[idx] }));
-            combined = combined.concat(tagged);
+            combined = combined.concat(result.tagged);
           } else {
-            failed.push(subjectList[idx]);
+            failed.push(result.subject);
           }
         });
         setFailedSubjects(failed);
@@ -186,11 +205,24 @@ const CBTExam = () => {
   };
 
   if (gate.loading || loading) {
+    const pct = loadProgress.total > 0 ? Math.round((loadProgress.loaded / loadProgress.total) * 100) : 0;
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-center">
+        <div className="text-center w-72">
           <Loader2 className="mx-auto h-10 w-10 animate-spin text-primary" />
-          <p className="mt-4 text-sm text-muted-foreground">Loading exam questions…</p>
+          <p className="mt-4 text-sm font-medium text-foreground">Loading exam questions…</p>
+          <div className="mt-4 w-full rounded-full bg-muted h-2.5 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-500"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {loadProgress.loaded}/{loadProgress.total} subjects loaded
+            {loadProgress.loaded < loadProgress.total && (
+              <span className="block mt-0.5">Fetching {loadProgress.currentSubject}…</span>
+            )}
+          </p>
         </div>
       </div>
     );
