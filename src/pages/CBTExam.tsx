@@ -31,6 +31,7 @@ const CBTExam = () => {
   const [questions, setQuestions] = useState<TaggedQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [failedSubjects, setFailedSubjects] = useState<string[]>([]);
   const [loadProgress, setLoadProgress] = useState<{ loaded: number; total: number; currentSubject: string }>({ loaded: 0, total: 0, currentSubject: "" });
 
   const [current, setCurrent] = useState(0);
