@@ -408,6 +408,47 @@ const AdminQuestionsPage = () => {
   const allSelected = filtered.length > 0 && selectedIds.size === filtered.length;
   const someSelected = selectedIds.size > 0 && selectedIds.size < filtered.length;
 
+  // AI generator
+  const openAiDialog = () => {
+    setAiForm({ exam_id: "", subject_id: "", topic: "", difficulty: "Medium", count: 5 });
+    setAiResult(null);
+    setAiDialogOpen(true);
+  };
+
+  const aiFilteredSubjects = aiForm.exam_id ? subjects.filter((s) => s.exam_id === aiForm.exam_id) : [];
+
+  const handleAiGenerate = async () => {
+    if (!aiForm.exam_id || !aiForm.subject_id) {
+      toast.error("Please select an exam and subject."); return;
+    }
+    setAiGenerating(true);
+    setAiResult(null);
+    try {
+      const examName = examMap[aiForm.exam_id]?.name || "";
+      const subjectName = subjectMap[aiForm.subject_id]?.name || "";
+      const { data, error } = await supabase.functions.invoke("generate-questions", {
+        body: {
+          exam_id: aiForm.exam_id,
+          subject_id: aiForm.subject_id,
+          topic: aiForm.topic || undefined,
+          difficulty: aiForm.difficulty,
+          count: aiForm.count,
+          exam_name: examName,
+          subject_name: subjectName,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setAiResult({ saved: data.saved, failed: data.failed, questions: data.questions });
+      toast.success(`Generated and saved ${data.saved} question${data.saved !== 1 ? "s" : ""}!`);
+      fetchAll();
+    } catch (err: any) {
+      toast.error(err.message || "AI generation failed");
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
   return (
     <AdminLayout
       title="Questions"
