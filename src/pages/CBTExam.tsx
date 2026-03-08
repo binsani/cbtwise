@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Flag, ChevronLeft, ChevronRight, Clock, AlertTriangle, Loader2 } from "lucide-react";
 import { fetchQuestions, type Question } from "@/lib/questions-api";
 import { saveAttempt } from "@/lib/save-attempt";
+import { useSubscriptionGate } from "@/hooks/use-subscription-gate";
+import UpgradeGate from "@/components/UpgradeGate";
 
 const CBTExam = () => {
   const [searchParams] = useSearchParams();
