@@ -21,7 +21,11 @@ const PracticeMode = () => {
   const shuffleO = searchParams.get("shuffleO") !== "false";
   const gate = useSubscriptionGate();
 
-  const [questions, setQuestions] = useState<Question[]>([]);
+  interface TaggedQuestion extends Question {
+    _subject: string;
+  }
+
+  const [questions, setQuestions] = useState<TaggedQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [failedSubjects, setFailedSubjects] = useState<string[]>([]);
@@ -31,6 +35,8 @@ const PracticeMode = () => {
   const [showExplanation, setShowExplanation] = useState(false);
   const [bookmarked, setBookmarked] = useState<Set<number>>(new Set());
 
+
+
   useEffect(() => {
     setLoading(true);
     setError(null);
@@ -39,10 +45,10 @@ const PracticeMode = () => {
     Promise.allSettled(subjectList.map((s) => fetchQuestions(s, exam, perSubject)))
       .then((results) => {
         const failed: string[] = [];
-        let combined: Question[] = [];
+        let combined: TaggedQuestion[] = [];
         results.forEach((result, idx) => {
           if (result.status === "fulfilled") {
-            combined = combined.concat(result.value);
+            combined = combined.concat(result.value.map((q) => ({ ...q, _subject: subjectList[idx] })));
           } else {
             failed.push(subjectList[idx]);
           }
@@ -169,9 +175,16 @@ const PracticeMode = () => {
         {/* Question Card */}
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
-            <span className="text-sm font-semibold text-muted-foreground">
-              Question {current + 1} of {questions.length}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-muted-foreground">
+                Question {current + 1} of {questions.length}
+              </span>
+              {q._subject && (
+                <span className="rounded-md bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                  {q._subject}
+                </span>
+              )}
+            </div>
             <button onClick={toggleBookmark} className="text-muted-foreground hover:text-accent">
               <Bookmark className={`h-5 w-5 ${bookmarked.has(q.id) ? "fill-accent text-accent" : ""}`} />
             </button>
