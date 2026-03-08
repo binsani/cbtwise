@@ -1,18 +1,21 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Flag, ChevronLeft, ChevronRight, Clock, AlertTriangle, Loader2 } from "lucide-react";
+import { Flag, ChevronLeft, ChevronRight, Clock, AlertTriangle, Loader2, CheckCircle2 } from "lucide-react";
 import { fetchQuestions, type Question } from "@/lib/questions-api";
 import { saveAttempt } from "@/lib/save-attempt";
 import { useSubscriptionGate } from "@/hooks/use-subscription-gate";
 import UpgradeGate from "@/components/UpgradeGate";
+
+interface TaggedQuestion extends Question {
+  _subject: string;
+}
 
 const CBTExam = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const exam = searchParams.get("exam") || "utme";
 
-  // Support multi-subject via comma-separated "subjects" param, fallback to single "subject"
   const subjectsParam = searchParams.get("subjects") || searchParams.get("subject") || "mathematics";
   const subjectList = subjectsParam.split(",").map((s) => s.trim()).filter(Boolean);
 
@@ -23,7 +26,7 @@ const CBTExam = () => {
 
   const gate = useSubscriptionGate();
 
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [questions, setQuestions] = useState<TaggedQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [failedSubjects, setFailedSubjects] = useState<string[]>([]);
@@ -34,6 +37,19 @@ const CBTExam = () => {
   const [timeLeft, setTimeLeft] = useState(totalTimeMins * 60);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [started, setStarted] = useState(false);
+  const [activeSubjectTab, setActiveSubjectTab] = useState<string | null>(null);
+
+  // Build subject → question index map
+  const subjectQuestionMap = useMemo(() => {
+    const map: Record<string, number[]> = {};
+    questions.forEach((q, i) => {
+      if (!map[q._subject]) map[q._subject] = [];
+      map[q._subject].push(i);
+    });
+    return map;
+  }, [questions]);
+
+  const loadedSubjects = useMemo(() => Object.keys(subjectQuestionMap), [subjectQuestionMap]);
 
   useEffect(() => {
     setLoading(true);
@@ -45,10 +61,11 @@ const CBTExam = () => {
     Promise.allSettled(subjectList.map((sub) => fetchQuestions(sub, exam, perSubject)))
       .then((results) => {
         const failed: string[] = [];
-        let combined: Question[] = [];
+        let combined: TaggedQuestion[] = [];
         results.forEach((result, idx) => {
           if (result.status === "fulfilled") {
-            combined = combined.concat(result.value);
+            const tagged = result.value.map((q) => ({ ...q, _subject: subjectList[idx] }));
+            combined = combined.concat(tagged);
           } else {
             failed.push(subjectList[idx]);
           }
@@ -160,127 +177,229 @@ const CBTExam = () => {
   const answeredCount = Object.keys(answers).length;
   const isUrgent = timeLeft < 300;
 
+  // Filter grid questions by active subject tab
+  const gridIndices = activeSubjectTab && subjectQuestionMap[activeSubjectTab]
+    ? subjectQuestionMap[activeSubjectTab]
+    : questions.map((_, i) => i);
+
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="flex min-h-screen flex-col bg-background">
       {/* Top Bar */}
-      <div className="sticky top-0 z-50 border-b border-border bg-card px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-display text-sm font-bold">{exam.toUpperCase()} Mock Exam</div>
-            <div className="text-xs text-muted-foreground">{subjectList.length} subjects · {questions.length} questions</div>
-            {failedSubjects.length > 0 && (
-              <div className="text-xs text-accent font-medium">⚠ {failedSubjects.join(", ")} unavailable</div>
-            )}
+      <div className="sticky top-0 z-50 border-b border-border bg-card shadow-sm">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-4">
+            <div>
+              <div className="font-display text-sm font-bold">{exam.toUpperCase()} Mock Exam</div>
+              {failedSubjects.length > 0 && (
+                <div className="text-xs text-accent font-medium">⚠ {failedSubjects.join(", ")} unavailable</div>
+              )}
+            </div>
+            <button
+              onClick={() => {
+                const s = new Set(flagged);
+                if (s.has(current)) s.delete(current);
+                else s.add(current);
+                setFlagged(s);
+              }}
+              className={`hidden sm:flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                flagged.has(current) ? "bg-accent/10 text-accent" : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <Flag className={`h-3.5 w-3.5 ${flagged.has(current) ? "fill-accent" : ""}`} />
+              {flagged.has(current) ? "Flagged" : "Flag"}
+            </button>
           </div>
-          <div className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold ${isUrgent ? "bg-destructive/10 text-destructive" : "bg-muted"}`}>
-            <Clock className="h-4 w-4" />
-            {formatTime(timeLeft)}
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline text-xs text-muted-foreground font-medium">
+              {answeredCount}/{questions.length} answered
+            </span>
+            <div className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-bold ${
+              isUrgent ? "bg-destructive text-destructive-foreground animate-pulse" : "bg-primary text-primary-foreground"
+            }`}>
+              <Clock className="h-4 w-4" />
+              {formatTime(timeLeft)}
+            </div>
           </div>
         </div>
       </div>
 
       <div className="flex flex-1 flex-col lg:flex-row">
-        {/* Question Area */}
-        <div className="flex-1 px-4 py-6 lg:px-12">
-          <div className="mx-auto max-w-2xl">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <span className="font-display text-sm font-bold text-muted-foreground">
-                  Question {current + 1} of {questions.length}
-                </span>
-                {q.section && (
-                  <span className="ml-2 rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">{q.section}</span>
-                )}
-              </div>
+        {/* Left Sidebar: Subject Tabs + Question Grid */}
+        <div className="order-2 lg:order-1 border-t lg:border-t-0 lg:border-r border-border bg-card p-4 lg:w-72">
+          {/* Subject Tabs */}
+          {loadedSubjects.length > 1 && (
+            <div className="mb-4 flex flex-wrap gap-1.5">
               <button
-                onClick={() => {
-                  const s = new Set(flagged);
-                  if (s.has(current)) s.delete(current);
-                  else s.add(current);
-                  setFlagged(s);
-                }}
-                className={`flex items-center gap-1 text-xs font-medium ${flagged.has(current) ? "text-accent" : "text-muted-foreground hover:text-accent"}`}
+                onClick={() => setActiveSubjectTab(null)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  !activeSubjectTab
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
               >
-                <Flag className={`h-4 w-4 ${flagged.has(current) ? "fill-accent" : ""}`} />
-                {flagged.has(current) ? "Flagged" : "Flag for review"}
+                All
               </button>
-            </div>
-
-            <p className="mb-8 text-lg font-medium leading-relaxed">{q.text}</p>
-
-            <div className="space-y-3">
-              {q.options.map((opt, idx) => (
+              {loadedSubjects.map((sub) => (
                 <button
-                  key={idx}
-                  onClick={() => setAnswers({ ...answers, [current]: idx })}
-                  className={`w-full text-left flex items-center gap-3 rounded-xl border p-4 text-sm transition-all ${
-                    answers[current] === idx
-                      ? "border-2 border-primary bg-primary/5 font-semibold"
-                      : "border-border bg-card hover:border-primary/30"
+                  key={sub}
+                  onClick={() => setActiveSubjectTab(sub)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    activeSubjectTab === sub
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
                   }`}
                 >
-                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                    answers[current] === idx ? "bg-primary text-primary-foreground" : "border border-border"
-                  }`}>
-                    {String.fromCharCode(65 + idx)}
-                  </span>
-                  {opt}
+                  {sub}
                 </button>
               ))}
             </div>
+          )}
 
-            {/* Nav */}
-            <div className="mt-8 flex items-center justify-between">
-              <Button variant="outline" onClick={() => setCurrent(Math.max(0, current - 1))} disabled={current === 0}>
-                <ChevronLeft className="mr-1 h-4 w-4" /> Previous
-              </Button>
-              {current === questions.length - 1 ? (
-                <Button onClick={() => setShowSubmitModal(true)}>Submit Exam</Button>
-              ) : (
-                <Button onClick={() => setCurrent(current + 1)}>
-                  Next <ChevronRight className="ml-1 h-4 w-4" />
-                </Button>
-              )}
-            </div>
+          {/* Attempt Counter */}
+          <div className="mb-3 flex items-center justify-between">
+            <span className="font-display text-sm font-bold">
+              {activeSubjectTab || "All Questions"}
+            </span>
+            <span className="text-xs font-bold text-primary">
+              Attempt: {
+                activeSubjectTab
+                  ? (subjectQuestionMap[activeSubjectTab] || []).filter((i) => answers[i] !== undefined).length
+                  : answeredCount
+              }/{gridIndices.length}
+            </span>
           </div>
-        </div>
 
-        {/* Question Palette */}
-        <div className="border-t lg:border-t-0 lg:border-l border-border bg-card p-4 lg:w-64">
-          <h3 className="mb-3 font-display text-sm font-bold">Question Navigator</h3>
-          <div className="grid grid-cols-5 gap-2 max-h-80 overflow-y-auto">
-            {questions.map((_, i) => (
+          {/* 7-Column Question Grid */}
+          <div className="grid grid-cols-7 gap-1.5 max-h-[60vh] overflow-y-auto">
+            {gridIndices.map((qIdx) => (
               <button
-                key={i}
-                onClick={() => setCurrent(i)}
-                className={`flex h-10 w-10 items-center justify-center rounded-lg text-xs font-bold transition-all ${
-                  i === current
-                    ? "bg-primary text-primary-foreground"
-                    : answers[i] !== undefined
+                key={qIdx}
+                onClick={() => setCurrent(qIdx)}
+                className={`flex h-9 w-full items-center justify-center rounded text-xs font-bold transition-all ${
+                  qIdx === current
+                    ? "ring-2 ring-primary bg-primary text-primary-foreground"
+                    : answers[qIdx] !== undefined
                     ? "bg-primary/20 text-primary"
-                    : flagged.has(i)
-                    ? "bg-accent/20 text-accent border border-accent"
-                    : "bg-muted text-muted-foreground"
+                    : flagged.has(qIdx)
+                    ? "bg-accent/20 text-accent ring-1 ring-accent"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
               >
-                {i + 1}
+                {qIdx + 1}
               </button>
             ))}
           </div>
-          <div className="mt-4 space-y-2 text-xs text-muted-foreground">
-            <div className="flex items-center gap-2"><div className="h-3 w-3 rounded bg-primary/20" /> Answered ({answeredCount})</div>
-            <div className="flex items-center gap-2"><div className="h-3 w-3 rounded bg-muted" /> Unanswered ({questions.length - answeredCount})</div>
-            <div className="flex items-center gap-2"><div className="h-3 w-3 rounded border border-accent bg-accent/20" /> Flagged ({flagged.size})</div>
+
+          {/* Legend */}
+          <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-sm bg-primary/20" /> Answered</div>
+            <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-sm bg-muted border border-border" /> Unanswered</div>
+            <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-sm bg-primary" /> Current</div>
+            <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-sm bg-accent/20 ring-1 ring-accent" /> Flagged</div>
           </div>
-          <Button className="mt-4 w-full" onClick={() => setShowSubmitModal(true)}>
-            Submit Exam
+        </div>
+
+        {/* Main Question Area */}
+        <div className="order-1 lg:order-2 flex-1 px-4 py-6 lg:px-12 pb-24 lg:pb-6">
+          <div className="mx-auto max-w-2xl">
+            {/* Question header */}
+            <div className="mb-2 flex items-center justify-between">
+              <span className="font-display text-sm font-bold text-muted-foreground">
+                Question: {current + 1}/{questions.length}
+              </span>
+              {q._subject && (
+                <span className="rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                  {q._subject}
+                </span>
+              )}
+            </div>
+
+            {q.section && (
+              <p className="mb-2 text-sm italic text-muted-foreground">
+                {q.section}
+              </p>
+            )}
+
+            <p className="mb-8 text-base font-medium leading-relaxed lg:text-lg">{q.text}</p>
+
+            {/* Options — radio-style like TestDriller */}
+            <div className="space-y-3">
+              {q.options.map((opt, idx) => {
+                const isSelected = answers[current] === idx;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => setAnswers({ ...answers, [current]: idx })}
+                    className={`group w-full text-left flex items-center gap-4 rounded-xl border p-4 text-sm transition-all ${
+                      isSelected
+                        ? "border-2 border-primary bg-primary/5"
+                        : "border-border bg-card hover:border-primary/30"
+                    }`}
+                  >
+                    <span className="font-display text-sm font-bold text-muted-foreground w-5 shrink-0">
+                      {String.fromCharCode(65 + idx)}
+                    </span>
+                    <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                      isSelected ? "border-primary bg-primary" : "border-muted-foreground/30 group-hover:border-primary/50"
+                    }`}>
+                      {isSelected && <div className="h-2 w-2 rounded-full bg-primary-foreground" />}
+                    </div>
+                    <span className={isSelected ? "font-medium" : ""}>{opt}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Mobile flag button */}
+            <button
+              onClick={() => {
+                const s = new Set(flagged);
+                if (s.has(current)) s.delete(current);
+                else s.add(current);
+                setFlagged(s);
+              }}
+              className={`mt-4 flex sm:hidden items-center gap-1.5 text-xs font-medium ${
+                flagged.has(current) ? "text-accent" : "text-muted-foreground"
+              }`}
+            >
+              <Flag className={`h-3.5 w-3.5 ${flagged.has(current) ? "fill-accent" : ""}`} />
+              {flagged.has(current) ? "Flagged for review" : "Flag for review"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Fixed Bottom Navigation Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card px-4 py-3 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+        <div className="mx-auto flex max-w-2xl items-center justify-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setCurrent(Math.max(0, current - 1))}
+            disabled={current === 0}
+            className="min-w-[110px]"
+          >
+            <ChevronLeft className="mr-1 h-4 w-4" /> Previous
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => setShowSubmitModal(true)}
+            className="min-w-[110px]"
+          >
+            <CheckCircle2 className="mr-1 h-4 w-4" /> Submit
+          </Button>
+          <Button
+            onClick={() => setCurrent(Math.min(questions.length - 1, current + 1))}
+            disabled={current === questions.length - 1}
+            className="min-w-[110px]"
+          >
+            Next <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
       </div>
 
       {/* Submit Modal */}
       {showSubmitModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/50 p-4">
           <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl">
             <div className="mb-4 flex items-center gap-3">
               <AlertTriangle className="h-6 w-6 text-accent" />
