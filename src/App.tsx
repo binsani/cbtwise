@@ -63,6 +63,7 @@ const App = () => (
             <Route path="/admin/questions" element={<AdminRoute><AdminQuestions /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <TawkToChat />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
