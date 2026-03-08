@@ -871,7 +871,7 @@ const AdminQuestionsPage = () => {
             {aiResult && (
               <div className="rounded-lg border border-border bg-muted/50 p-3 text-sm">
                 <p className="font-medium flex items-center gap-1">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
                   {aiResult.saved} question{aiResult.saved !== 1 ? "s" : ""} saved
                   {aiResult.failed > 0 && <span className="text-destructive ml-2">({aiResult.failed} failed)</span>}
                 </p>
