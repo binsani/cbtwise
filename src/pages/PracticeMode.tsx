@@ -5,6 +5,7 @@ import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Bookmark, ChevronLeft, ChevronRight, CheckCircle2, Loader2 } from "lucide-react";
 import { fetchQuestions, type Question } from "@/lib/questions-api";
+import { saveAttempt } from "@/lib/save-attempt";
 
 const PracticeMode = () => {
   const [searchParams] = useSearchParams();
