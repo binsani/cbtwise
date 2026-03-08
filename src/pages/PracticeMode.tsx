@@ -175,9 +175,16 @@ const PracticeMode = () => {
         {/* Question Card */}
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
-            <span className="text-sm font-semibold text-muted-foreground">
-              Question {current + 1} of {questions.length}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-muted-foreground">
+                Question {current + 1} of {questions.length}
+              </span>
+              {q._subject && (
+                <span className="rounded-md bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                  {q._subject}
+                </span>
+              )}
+            </div>
             <button onClick={toggleBookmark} className="text-muted-foreground hover:text-accent">
               <Bookmark className={`h-5 w-5 ${bookmarked.has(q.id) ? "fill-accent text-accent" : ""}`} />
             </button>
