@@ -168,16 +168,39 @@ const Dashboard = () => {
           </div>
         )}
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <div className="mb-6 flex items-center gap-3">
+        {/* Onboarding Card for New Users */}
+        {totalTests === 0 && (
+          <div className="mb-8 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-6 text-center">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+              <GraduationCap className="h-7 w-7 text-primary" />
+            </div>
+            <h2 className="font-display text-xl font-bold">Ready to ace your exams? 🚀</h2>
+            <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+              Start with a quick practice session to see where you stand, then use mock exams to simulate the real thing.
+            </p>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <Button asChild>
-                <Link to="/exams">Continue Practicing <ArrowRight className="ml-1 h-4 w-4" /></Link>
+                <Link to="/exams"><Zap className="mr-1.5 h-4 w-4" /> Start Practicing</Link>
               </Button>
-              <Button variant="secondary" asChild>
-                <Link to="/mock-setup">Take Mock Exam</Link>
+              <Button variant="outline" asChild>
+                <Link to="/mock-setup">Try a Mock Exam</Link>
               </Button>
             </div>
+          </div>
+        )}
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            {totalTests > 0 && (
+              <div className="mb-6 flex items-center gap-3">
+                <Button asChild>
+                  <Link to="/exams">Continue Practicing <ArrowRight className="ml-1 h-4 w-4" /></Link>
+                </Button>
+                <Button variant="secondary" asChild>
+                  <Link to="/mock-setup">Take Mock Exam</Link>
+                </Button>
+              </div>
+            )}
 
             {/* Recent Tests */}
             <div className="rounded-xl border border-border bg-card">
