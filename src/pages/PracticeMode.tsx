@@ -142,6 +142,42 @@ const PracticeMode = () => {
     setBookmarked(newSet);
   };
 
+  // Keyboard shortcuts: Arrow keys navigate, A-E/1-5 select options
+  useEffect(() => {
+    if (questions.length === 0) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      const isAnswered = selected[current] !== undefined;
+      switch (e.key) {
+        case "ArrowRight": case "ArrowDown":
+          e.preventDefault();
+          next();
+          break;
+        case "ArrowLeft": case "ArrowUp":
+          e.preventDefault();
+          prev();
+          break;
+        case "a": case "A": case "1":
+          if (!isAnswered && questions[current]?.options.length > 0) handleSelect(0);
+          break;
+        case "b": case "B": case "2":
+          if (!isAnswered && questions[current]?.options.length > 1) handleSelect(1);
+          break;
+        case "c": case "C": case "3":
+          if (!isAnswered && questions[current]?.options.length > 2) handleSelect(2);
+          break;
+        case "d": case "D": case "4":
+          if (!isAnswered && questions[current]?.options.length > 3) handleSelect(3);
+          break;
+        case "e": case "E": case "5":
+          if (!isAnswered && questions[current]?.options.length > 4) handleSelect(4);
+          break;
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
