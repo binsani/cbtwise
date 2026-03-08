@@ -22,6 +22,22 @@ export async function fetchQuestions(
 
   if (error) {
     console.error("Error fetching questions:", error);
+
+    // Try to extract a user-friendly message from the response
+    try {
+      const context = error.context as Response | undefined;
+      if (context && typeof context.json === "function") {
+        const body = await context.json();
+        if (body?.message) {
+          throw new Error(body.message);
+        }
+      }
+    } catch (parseErr) {
+      if (parseErr instanceof Error && parseErr.message !== "Failed to load questions. Please try again.") {
+        throw parseErr;
+      }
+    }
+
     throw new Error("Failed to load questions. Please try again.");
   }
 
