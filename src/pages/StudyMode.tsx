@@ -56,7 +56,9 @@ const StudyMode = () => {
     setLoading(true);
     setError(null);
     setFailedSubjects([]);
-    const perSubject = Math.ceil(totalQuestions / subjectList.length);
+    const perSubject = subjectList.length === 1
+      ? totalQuestions
+      : Math.ceil(totalQuestions / subjectList.length * 1.5);
     Promise.allSettled(
       subjectList.map((s) => fetchQuestions(s, exam, perSubject))
     )
