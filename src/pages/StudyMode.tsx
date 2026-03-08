@@ -333,7 +333,7 @@ const StudyMode = () => {
                     {opt}
                   </span>
                   {showAnswer && isCorrect && (
-                    <span className="ml-auto text-xs font-semibold text-green-600">
+                    <span className="ml-auto text-xs font-semibold text-primary">
                       ✓ Correct
                     </span>
                   )}
