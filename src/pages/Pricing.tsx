@@ -16,7 +16,7 @@ const plans = [
   },
   {
     name: "Premium Monthly",
-    price: "₦2,500",
+    price: "₦1,500",
     period: "/month",
     description: "Full access for serious exam candidates",
     features: ["Unlimited questions", "Unlimited mock exams", "Full detailed explanations", "Performance analytics", "Weak topic recommendations", "Bookmark & revision mode", "Priority support"],
@@ -26,10 +26,10 @@ const plans = [
   },
   {
     name: "Premium Annual",
-    price: "₦20,000",
+    price: "₦12,000",
     period: "/year",
-    description: "Best value — save ₦10,000",
-    features: ["Everything in Premium Monthly", "Save ₦10,000 per year", "Offline question packs", "Early access to new features", "Dedicated support"],
+    description: "Best value — save ₦6,000",
+    features: ["Everything in Premium Monthly", "Save ₦6,000 per year", "Offline question packs", "Early access to new features", "Dedicated support"],
     limitations: [],
     cta: "Save with Annual",
     popular: false,
