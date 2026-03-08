@@ -44,8 +44,19 @@ const CBTExam = () => {
     Promise.all(subjectList.map((sub) => fetchQuestions(sub, exam, perSubject)))
       .then((results) => {
         // Combine, shuffle, and trim to exact count
-        const combined = results.flat();
-        const shuffled = combined.sort(() => Math.random() - 0.5).slice(0, totalQuestions);
+        let combined = results.flat();
+        if (shuffleQ) combined = combined.sort(() => Math.random() - 0.5);
+        if (shuffleO) {
+          combined = combined.map((q) => {
+            const indices = q.options.map((_, i) => i).sort(() => Math.random() - 0.5);
+            return {
+              ...q,
+              options: indices.map((i) => q.options[i]),
+              correct: indices.indexOf(q.correct),
+            };
+          });
+        }
+        const shuffled = combined.slice(0, totalQuestions);
         if (shuffled.length === 0) {
           setError("No questions available. Please try another subject.");
         } else {

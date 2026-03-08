@@ -32,17 +32,28 @@ const PracticeMode = () => {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetchQuestions(subject, exam, 10)
-      .then((qs) => {
-        if (qs.length === 0) {
-          setError("No questions available for this subject yet.");
+    const perSubject = Math.ceil(totalQuestions / subjectList.length);
+    Promise.all(subjectList.map((s) => fetchQuestions(s, exam, perSubject)))
+      .then((results) => {
+        let combined = results.flat();
+        if (shuffleQ) combined = combined.sort(() => Math.random() - 0.5);
+        if (shuffleO) {
+          combined = combined.map((q) => {
+            const indices = q.options.map((_, i) => i).sort(() => Math.random() - 0.5);
+            return { ...q, options: indices.map((i) => q.options[i]), correct: indices.indexOf(q.correct) };
+          });
+        }
+        const trimmed = combined.slice(0, totalQuestions);
+        if (trimmed.length === 0) {
+          setError("No questions available for the selected subject(s).");
         } else {
-          setQuestions(qs);
+          setQuestions(trimmed);
         }
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [subject, exam]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subjectsParam, exam, totalQuestions]);
 
   if (gate.loading || loading) {
     return (
