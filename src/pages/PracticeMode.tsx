@@ -5,6 +5,7 @@ import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Bookmark, ChevronLeft, ChevronRight, CheckCircle2, Loader2 } from "lucide-react";
 import { fetchQuestions, type Question } from "@/lib/questions-api";
+import { saveAttempt } from "@/lib/save-attempt";
 
 const PracticeMode = () => {
   const [searchParams] = useSearchParams();
@@ -162,10 +163,19 @@ const PracticeMode = () => {
             <ChevronLeft className="mr-1 h-4 w-4" /> Previous
           </Button>
           {current === questions.length - 1 && Object.keys(selected).length === questions.length ? (
-            <Button asChild>
-              <Link to={`/results?score=${Object.entries(selected).filter(([i, a]) => a === questions[Number(i)].correct).length}&total=${questions.length}&exam=${exam}`}>
-                View Results
-              </Link>
+            <Button onClick={async () => {
+              const score = Object.entries(selected).filter(([i, a]) => a === questions[Number(i)].correct).length;
+              await saveAttempt({
+                examSlug: exam,
+                subject,
+                mode: "practice",
+                totalQuestions: questions.length,
+                correctAnswers: score,
+                answers: selected,
+              });
+              window.location.href = `/results?score=${score}&total=${questions.length}&exam=${exam}&subject=${encodeURIComponent(subject)}&mode=practice`;
+            }}>
+              View Results
             </Button>
           ) : (
             <Button onClick={next} disabled={current === questions.length - 1}>
