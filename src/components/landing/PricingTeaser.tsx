@@ -25,6 +25,19 @@ const plans = [
       "Priority support",
     ],
     cta: "Go Premium",
+    popular: false,
+  },
+  {
+    name: "Exam Season",
+    price: "₦3,500",
+    period: "/3 months",
+    features: [
+      "Everything in Premium",
+      "Save ₦1,000 vs monthly",
+      "3-month intensive prep",
+      "Offline question packs",
+    ],
+    cta: "Start Exam Prep",
     popular: true,
   },
   {
