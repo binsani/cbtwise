@@ -4,7 +4,7 @@ import cbtwiseLogo from "@/assets/cbtwise-logo.png";
 
 const Footer = forwardRef<HTMLElement>(function Footer(_, ref) {
   return (
-    <footer className="border-t border-border bg-muted/50">
+    <footer ref={ref} className="border-t border-border bg-muted/50">
       <div className="container py-12">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div>
