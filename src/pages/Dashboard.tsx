@@ -118,6 +118,9 @@ const Dashboard = () => {
           <p className="text-muted-foreground">Here's your study progress.</p>
         </div>
 
+        {/* Daily Motivational Quote */}
+        {totalTests > 0 && <DailyQuote />}
+
         {/* Stats */}
         <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
           {stats.map((s) => (
