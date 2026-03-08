@@ -79,6 +79,44 @@ const AdminOverview = () => {
           }))
         );
       }
+
+      // Fetch question coverage per subject
+      const { data: allQuestions } = await supabase
+        .from("questions")
+        .select("subject_id")
+        .eq("is_active", true);
+
+      if (allQuestions) {
+        const countBySubject: Record<string, number> = {};
+        allQuestions.forEach((q) => {
+          countBySubject[q.subject_id] = (countBySubject[q.subject_id] || 0) + 1;
+        });
+
+        const { data: subjects } = await supabase
+          .from("subjects")
+          .select("id, name, exam_id")
+          .eq("is_active", true);
+        const { data: exams } = await supabase
+          .from("exams")
+          .select("id, name")
+          .eq("is_active", true);
+
+        if (subjects && exams) {
+          const examMap: Record<string, string> = {};
+          exams.forEach((e) => { examMap[e.id] = e.name; });
+
+          const coverageData: SubjectCoverage[] = subjects
+            .map((s) => ({
+              name: s.name,
+              examName: examMap[s.exam_id] || "Unknown",
+              count: countBySubject[s.id] || 0,
+            }))
+            .sort((a, b) => b.count - a.count);
+
+          setCoverage(coverageData);
+        }
+      }
+
       setLoading(false);
     };
     fetchData();
