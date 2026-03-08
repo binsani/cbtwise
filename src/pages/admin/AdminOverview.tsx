@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { Users, BookOpen, FileQuestion, BarChart3, TrendingUp, Loader2, CreditCard, MessageSquare } from "lucide-react";
+import { Users, BookOpen, FileQuestion, BarChart3, TrendingUp, Loader2, CreditCard, MessageSquare, Database } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Progress } from "@/components/ui/progress";
 
 interface Stats {
   totalUsers: number;
