@@ -13,6 +13,7 @@ const PracticeMode = () => {
   const [searchParams] = useSearchParams();
   const exam = searchParams.get("exam") || "utme";
   const subject = searchParams.get("subject") || "Biology";
+  const gate = useSubscriptionGate();
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
