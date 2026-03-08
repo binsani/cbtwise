@@ -251,13 +251,21 @@ const AdminQuestionsPage = () => {
       toast.error("Please select a CSV file."); return;
     }
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       const text = ev.target?.result as string;
       const rows = parseCSV(text);
       if (rows.length === 0) {
         toast.error("No data rows found in CSV."); return;
       }
-      const validated = validateRows(rows);
+      // Fetch all existing question texts for duplicate detection
+      const { data: existingQuestions } = await supabase
+        .from("questions")
+        .select("text")
+        .limit(10000);
+      const existingTexts = new Set(
+        (existingQuestions ?? []).map((q) => q.text.trim().toLowerCase())
+      );
+      const validated = validateRows(rows, existingTexts);
       setCsvValidated(validated);
       setCsvStep("preview");
     };
