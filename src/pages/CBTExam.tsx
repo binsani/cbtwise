@@ -7,6 +7,7 @@ import { saveAttempt } from "@/lib/save-attempt";
 import { useSubscriptionGate } from "@/hooks/use-subscription-gate";
 import UpgradeGate from "@/components/UpgradeGate";
 import ExamCalculator from "@/components/ExamCalculator";
+import ReportQuestionModal from "@/components/ReportQuestionModal";
 
 interface TaggedQuestion extends Question {
   _subject: string;
