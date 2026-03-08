@@ -35,6 +35,7 @@ const PracticeMode = () => {
   const [selected, setSelected] = useState<Record<number, number>>({});
   const [showExplanation, setShowExplanation] = useState(false);
   const [bookmarked, setBookmarked] = useState<Set<number>>(new Set());
+  const [showEndModal, setShowEndModal] = useState(false);
 
 
   useEffect(() => {
