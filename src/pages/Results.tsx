@@ -7,10 +7,19 @@ import { motion } from "framer-motion";
 
 const Results = () => {
   const [searchParams] = useSearchParams();
-  const score = parseInt(searchParams.get("score") || "14");
+  const score = parseInt(searchParams.get("score") || "0");
   const total = parseInt(searchParams.get("total") || "20");
   const exam = searchParams.get("exam") || "utme";
+  const subject = searchParams.get("subject") || "";
+  const mode = searchParams.get("mode") || "mock";
+  const timeSpent = parseInt(searchParams.get("time") || "0");
   const percentage = Math.round((score / total) * 100);
+
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, "0")}`;
+  };
 
   const getGrade = () => {
     if (percentage >= 80) return { label: "Excellent! 🎉", color: "text-success" };
