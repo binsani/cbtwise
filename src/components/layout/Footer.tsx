@@ -1,7 +1,8 @@
+import { forwardRef } from "react";
 import { Link } from "react-router-dom";
 import cbtwiseLogo from "@/assets/cbtwise-logo.png";
 
-const Footer = () => {
+const Footer = forwardRef<HTMLElement>(function Footer(_, ref) {
   return (
     <footer className="border-t border-border bg-muted/50">
       <div className="container py-12">
