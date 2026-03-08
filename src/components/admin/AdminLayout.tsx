@@ -112,6 +112,7 @@ export default function AdminLayout({ children, title, description, actions }: A
                 <p className="text-xs text-muted-foreground">{description}</p>
               )}
             </div>
+            <AdminNotificationBell />
             {actions}
           </header>
           <main className="flex-1 p-4 md:p-6">{children}</main>
