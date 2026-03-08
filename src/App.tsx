@@ -60,6 +60,7 @@ const App = () => (
             <Route path="/exams" element={<ProtectedRoute><ExamSelection /></ProtectedRoute>} />
             <Route path="/exams/:examId/subjects" element={<ProtectedRoute><SubjectSelection /></ProtectedRoute>} />
             <Route path="/practice" element={<ProtectedRoute><PracticeMode /></ProtectedRoute>} />
+            <Route path="/study" element={<ProtectedRoute><StudyMode /></ProtectedRoute>} />
             <Route path="/mock-exam" element={<ProtectedRoute><CBTExam /></ProtectedRoute>} />
             <Route path="/mock-setup" element={<ProtectedRoute><MockExamSetup /></ProtectedRoute>} />
             <Route path="/results" element={<ProtectedRoute><Results /></ProtectedRoute>} />
