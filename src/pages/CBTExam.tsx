@@ -244,7 +244,12 @@ const CBTExam = () => {
               End Exam
             </button>
             <div>
-              <div className="font-display text-sm font-bold">{exam.toUpperCase()} Mock Exam</div>
+              <div className="font-display text-sm font-bold">
+                {exam.toUpperCase()} Mock Exam
+                {questions.length < totalQuestions && (
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">({questions.length} questions loaded)</span>
+                )}
+              </div>
               {failedSubjects.length > 0 && (
                 <div className="text-xs text-accent font-medium">⚠ {failedSubjects.join(", ")} unavailable</div>
               )}
