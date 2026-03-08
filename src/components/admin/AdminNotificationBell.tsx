@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { Bell } from "lucide-react";
+import { Bell, Flag, UserPlus, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useNavigate } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
 
 interface Notification {
   id: string;
@@ -61,9 +60,16 @@ export default function AdminNotificationBell() {
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
   };
 
+  const typeConfig: Record<string, { icon: typeof Bell; route: string; color: string }> = {
+    report: { icon: Flag, route: "/admin/reports", color: "text-destructive" },
+    signup: { icon: UserPlus, route: "/admin/users", color: "text-primary" },
+    contact: { icon: MessageSquare, route: "/admin/messages", color: "text-accent-foreground" },
+  };
+
   const handleClick = (n: Notification) => {
-    if (n.type === "report") {
-      navigate("/admin/reports");
+    const config = typeConfig[n.type];
+    if (config) {
+      navigate(config.route);
       setOpen(false);
     }
   };
@@ -111,10 +117,18 @@ export default function AdminNotificationBell() {
                   !n.is_read ? "bg-primary/5" : ""
                 }`}
               >
-                <div className="flex items-start gap-2">
-                  {!n.is_read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />}
-                  <div className={!n.is_read ? "" : "pl-4"}>
-                    <p className="text-sm font-medium">{n.title}</p>
+                <div className="flex items-start gap-2.5">
+                  {(() => {
+                    const config = typeConfig[n.type];
+                    const Icon = config?.icon || Bell;
+                    const color = config?.color || "text-muted-foreground";
+                    return <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${color}`} />;
+                  })()}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-medium truncate">{n.title}</p>
+                      {!n.is_read && <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />}
+                    </div>
                     <p className="text-xs text-muted-foreground line-clamp-2">{n.message}</p>
                     <p className="mt-1 text-[10px] text-muted-foreground">{timeAgo(n.created_at)}</p>
                   </div>
