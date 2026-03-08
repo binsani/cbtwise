@@ -210,6 +210,15 @@ const CBTExam = () => {
               <Flag className={`h-3.5 w-3.5 ${flagged.has(current) ? "fill-accent" : ""}`} />
               {flagged.has(current) ? "Flagged" : "Flag"}
             </button>
+            <button
+              onClick={() => setShowCalculator((v) => !v)}
+              className={`hidden sm:flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                showCalculator ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <Calculator className="h-3.5 w-3.5" />
+              Calculator
+            </button>
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden sm:inline text-xs text-muted-foreground font-medium">
