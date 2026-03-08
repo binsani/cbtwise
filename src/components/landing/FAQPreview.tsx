@@ -9,11 +9,11 @@ import {
 
 const faqs = [
   {
-    q: "Is ExamDrill NG free to use?",
+    q: "Is CBTWise free to use?",
     a: "Yes! You can practise up to 20 questions per day and take 3 mock exams per month for free. Premium plans unlock unlimited access.",
   },
   {
-    q: "Which exams does ExamDrill cover?",
+    q: "Which exams does CBTWise cover?",
     a: "We focus exclusively on UTME (JAMB), WAEC, and NECO — the three most important exams for Nigerian secondary school students.",
   },
   {
@@ -21,8 +21,8 @@ const faqs = [
     a: "Yes. Our question bank is compiled from past UTME, WAEC, and NECO examinations, reviewed and categorised by subject and topic.",
   },
   {
-    q: "Can I use ExamDrill on my phone?",
-    a: "Absolutely. ExamDrill is built mobile-first. It works smoothly on any phone browser — no app download needed.",
+    q: "Can I use CBTWise on my phone?",
+    a: "Absolutely. CBTWise is built mobile-first. It works smoothly on any phone browser — no app download needed.",
   },
 ];
 

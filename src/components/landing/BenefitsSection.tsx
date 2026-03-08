@@ -15,7 +15,7 @@ const BenefitsSection = () => {
     <section className="py-16 md:py-20">
       <div className="container">
         <div className="mx-auto mb-12 max-w-2xl text-center">
-          <h2 className="mb-3 font-display text-3xl font-bold md:text-4xl">Why Students Love ExamDrill</h2>
+          <h2 className="mb-3 font-display text-3xl font-bold md:text-4xl">Why Students Love CBTWise</h2>
           <p className="text-muted-foreground">Everything you need to prepare — nothing you don't.</p>
         </div>
 

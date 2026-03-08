@@ -27,7 +27,7 @@ const AdminDashboard = () => {
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="font-display text-2xl font-bold md:text-3xl">Admin Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Overview of ExamDrill NG platform</p>
+            <p className="text-sm text-muted-foreground">Overview of CBTWise platform</p>
           </div>
           <Button asChild>
             <Link to="/admin/questions"><Plus className="mr-1 h-4 w-4" /> Manage Questions</Link>

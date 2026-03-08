@@ -11,7 +11,7 @@ const Footer = () => {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                 <GraduationCap className="h-4 w-4 text-primary-foreground" />
               </div>
-              <span className="font-display text-lg font-bold">ExamDrill NG</span>
+              <span className="font-display text-lg font-bold">CBTWise</span>
             </Link>
             <p className="text-sm text-muted-foreground">
               Nigeria's trusted CBT practice platform for UTME, WAEC, and NECO exam preparation.
@@ -47,7 +47,7 @@ const Footer = () => {
         </div>
 
         <div className="mt-10 border-t border-border pt-6 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} ExamDrill NG. All rights reserved.
+          © {new Date().getFullYear()} CBTWise. All rights reserved.
         </div>
       </div>
     </footer>
