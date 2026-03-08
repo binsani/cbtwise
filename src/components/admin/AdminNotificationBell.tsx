@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { Bell } from "lucide-react";
+import { Bell, Flag, UserPlus, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useNavigate } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
 
 interface Notification {
   id: string;
