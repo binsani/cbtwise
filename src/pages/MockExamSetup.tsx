@@ -172,9 +172,7 @@ const MockExamSetup = () => {
       <Header />
       <main className="container max-w-3xl py-10">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-          <Button variant="ghost" size="sm" asChild className="mb-4 -ml-2 text-muted-foreground hover:text-foreground">
-            <Link to="/exams"><ArrowLeft className="mr-1.5 h-4 w-4" /> Back to Exams</Link>
-          </Button>
+          <ExamBreadcrumb items={[{ label: "Exams", href: "/exams" }, { label: "Setup" }]} />
           <h1 className="font-display text-3xl font-bold mb-1">Configure Your Session</h1>
           <p className="text-muted-foreground mb-8">Customize your practice or mock exam settings.</p>
 
