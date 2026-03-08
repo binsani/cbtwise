@@ -211,5 +211,6 @@ export default function AdminNotificationBell() {
         </div>
       </PopoverContent>
     </Popover>
+    </div>
   );
 }
