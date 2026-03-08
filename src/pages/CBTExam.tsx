@@ -18,6 +18,8 @@ const CBTExam = () => {
 
   const totalQuestions = Math.max(Number(searchParams.get("questions")) || 20, 10);
   const totalTimeMins = Math.max(Number(searchParams.get("time")) || 30, 1);
+  const shuffleQ = searchParams.get("shuffleQ") !== "false";
+  const shuffleO = searchParams.get("shuffleO") !== "false";
 
   const gate = useSubscriptionGate();
 
