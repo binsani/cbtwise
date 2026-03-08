@@ -23,12 +23,19 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import FAQ from "./pages/FAQ";
 import Profile from "./pages/Profile";
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminQuestions from "./pages/AdminQuestions";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 import TawkToChat from "@/components/TawkToChat";
+
+// Admin pages
+import AdminOverview from "./pages/admin/AdminOverview";
+import AdminQuestionsPage from "./pages/admin/AdminQuestionsPage";
+import AdminExams from "./pages/admin/AdminExams";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminMessages from "./pages/admin/AdminMessages";
 
 const queryClient = new QueryClient();
 
@@ -59,8 +66,16 @@ const App = () => (
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-            <Route path="/admin/questions" element={<AdminRoute><AdminQuestions /></AdminRoute>} />
+
+            {/* Admin routes */}
+            <Route path="/admin" element={<AdminRoute><AdminOverview /></AdminRoute>} />
+            <Route path="/admin/questions" element={<AdminRoute><AdminQuestionsPage /></AdminRoute>} />
+            <Route path="/admin/exams" element={<AdminRoute><AdminExams /></AdminRoute>} />
+            <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+            <Route path="/admin/subscriptions" element={<AdminRoute><AdminSubscriptions /></AdminRoute>} />
+            <Route path="/admin/analytics" element={<AdminRoute><AdminAnalytics /></AdminRoute>} />
+            <Route path="/admin/messages" element={<AdminRoute><AdminMessages /></AdminRoute>} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
           <TawkToChat />
