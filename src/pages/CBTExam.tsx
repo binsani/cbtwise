@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Flag, ChevronLeft, ChevronRight, Clock, AlertTriangle, Loader2, CheckCircle2 } from "lucide-react";
+import { Flag, ChevronLeft, ChevronRight, Clock, AlertTriangle, Loader2, CheckCircle2, Calculator } from "lucide-react";
 import { fetchQuestions, type Question } from "@/lib/questions-api";
 import { saveAttempt } from "@/lib/save-attempt";
 import { useSubscriptionGate } from "@/hooks/use-subscription-gate";
 import UpgradeGate from "@/components/UpgradeGate";
+import ExamCalculator from "@/components/ExamCalculator";
 
 interface TaggedQuestion extends Question {
   _subject: string;
@@ -38,6 +39,7 @@ const CBTExam = () => {
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [started, setStarted] = useState(false);
   const [activeSubjectTab, setActiveSubjectTab] = useState<string | null>(null);
+  const [showCalculator, setShowCalculator] = useState(false);
 
   // Build subject → question index map
   const subjectQuestionMap = useMemo(() => {
@@ -208,6 +210,15 @@ const CBTExam = () => {
               <Flag className={`h-3.5 w-3.5 ${flagged.has(current) ? "fill-accent" : ""}`} />
               {flagged.has(current) ? "Flagged" : "Flag"}
             </button>
+            <button
+              onClick={() => setShowCalculator((v) => !v)}
+              className={`hidden sm:flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                showCalculator ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <Calculator className="h-3.5 w-3.5" />
+              Calculator
+            </button>
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden sm:inline text-xs text-muted-foreground font-medium">
@@ -350,21 +361,32 @@ const CBTExam = () => {
               })}
             </div>
 
-            {/* Mobile flag button */}
-            <button
-              onClick={() => {
-                const s = new Set(flagged);
-                if (s.has(current)) s.delete(current);
-                else s.add(current);
-                setFlagged(s);
-              }}
-              className={`mt-4 flex sm:hidden items-center gap-1.5 text-xs font-medium ${
-                flagged.has(current) ? "text-accent" : "text-muted-foreground"
-              }`}
-            >
-              <Flag className={`h-3.5 w-3.5 ${flagged.has(current) ? "fill-accent" : ""}`} />
-              {flagged.has(current) ? "Flagged for review" : "Flag for review"}
-            </button>
+            {/* Mobile toolbar */}
+            <div className="mt-4 flex sm:hidden items-center gap-4">
+              <button
+                onClick={() => {
+                  const s = new Set(flagged);
+                  if (s.has(current)) s.delete(current);
+                  else s.add(current);
+                  setFlagged(s);
+                }}
+                className={`flex items-center gap-1.5 text-xs font-medium ${
+                  flagged.has(current) ? "text-accent" : "text-muted-foreground"
+                }`}
+              >
+                <Flag className={`h-3.5 w-3.5 ${flagged.has(current) ? "fill-accent" : ""}`} />
+                {flagged.has(current) ? "Flagged" : "Flag"}
+              </button>
+              <button
+                onClick={() => setShowCalculator((v) => !v)}
+                className={`flex items-center gap-1.5 text-xs font-medium ${
+                  showCalculator ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                <Calculator className="h-3.5 w-3.5" />
+                Calculator
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -396,6 +418,9 @@ const CBTExam = () => {
           </Button>
         </div>
       </div>
+
+      {/* Calculator */}
+      {showCalculator && <ExamCalculator onClose={() => setShowCalculator(false)} />}
 
       {/* Submit Modal */}
       {showSubmitModal && (
