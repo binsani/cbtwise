@@ -59,7 +59,11 @@ const Results = () => {
           <p className="text-sm text-muted-foreground">
             You scored {score} out of {total} questions correctly.
           </p>
-          <p className="text-xs text-muted-foreground mt-1">{exam.toUpperCase()} Mock Exam · Time: 24:35</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {exam.toUpperCase()} {mode === "practice" ? "Practice" : "Mock Exam"}
+            {subject ? ` · ${subject}` : ""}
+            {timeSpent > 0 ? ` · Time: ${formatTime(timeSpent)}` : ""}
+          </p>
         </motion.div>
 
         {/* Subject Breakdown */}
