@@ -4,11 +4,28 @@ import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GraduationCap } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import cbtwiseLogo from "@/assets/cbtwise-logo.png";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { resetPassword } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await resetPassword(email);
+    setLoading(false);
+    if (error) {
+      toast.error(error);
+    } else {
+      setSent(true);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -16,9 +33,7 @@ const ForgotPassword = () => {
       <main className="flex items-center justify-center px-4 py-16">
         <div className="w-full max-w-sm">
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-              <GraduationCap className="h-6 w-6 text-primary-foreground" />
-            </div>
+            <img src={cbtwiseLogo} alt="CBTWise" className="mx-auto mb-4 h-12 w-12 rounded-xl object-contain" />
             <h1 className="font-display text-2xl font-bold">Reset Password</h1>
             <p className="text-sm text-muted-foreground">We'll send you a link to reset your password</p>
           </div>
@@ -28,12 +43,15 @@ const ForgotPassword = () => {
               <p className="text-sm text-muted-foreground">Check your email for a password reset link.</p>
             </div>
           ) : (
-            <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setSent(true); }}>
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <div>
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
               </div>
-              <Button className="w-full" type="submit">Send Reset Link</Button>
+              <Button className="w-full" type="submit" disabled={loading}>
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Send Reset Link
+              </Button>
             </form>
           )}
         </div>

@@ -1,11 +1,20 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut, User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import cbtwiseLogo from "@/assets/cbtwise-logo.png";
 
 const Header = () => {
   const [open, setOpen] = useState(false);
+  const { user, loading, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    setOpen(false);
+    navigate("/");
+  };
 
   const navItems = [
     { label: "Home", to: "/" },
@@ -38,12 +47,28 @@ const Header = () => {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Button variant="ghost" asChild>
-            <Link to="/login">Log in</Link>
-          </Button>
-          <Button asChild>
-            <Link to="/signup">Get Started</Link>
-          </Button>
+          {loading ? null : user ? (
+            <>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/dashboard">Dashboard</Link>
+              </Button>
+              <Button variant="ghost" size="icon" asChild>
+                <Link to="/profile"><User className="h-4 w-4" /></Link>
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleSignOut}>
+                <LogOut className="mr-1 h-4 w-4" /> Log out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" asChild>
+                <Link to="/login">Log in</Link>
+              </Button>
+              <Button asChild>
+                <Link to="/signup">Get Started</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         <button
@@ -68,12 +93,28 @@ const Header = () => {
               </Link>
             ))}
             <hr className="my-2 border-border" />
-            <Button variant="ghost" asChild className="justify-start">
-              <Link to="/login" onClick={() => setOpen(false)}>Log in</Link>
-            </Button>
-            <Button asChild>
-              <Link to="/signup" onClick={() => setOpen(false)}>Get Started</Link>
-            </Button>
+            {user ? (
+              <>
+                <Button variant="ghost" asChild className="justify-start">
+                  <Link to="/dashboard" onClick={() => setOpen(false)}>Dashboard</Link>
+                </Button>
+                <Button variant="ghost" asChild className="justify-start">
+                  <Link to="/profile" onClick={() => setOpen(false)}>Profile</Link>
+                </Button>
+                <Button variant="outline" onClick={handleSignOut} className="justify-start">
+                  <LogOut className="mr-1 h-4 w-4" /> Log out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" asChild className="justify-start">
+                  <Link to="/login" onClick={() => setOpen(false)}>Log in</Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/signup" onClick={() => setOpen(false)}>Get Started</Link>
+                </Button>
+              </>
+            )}
           </nav>
         </div>
       )}
