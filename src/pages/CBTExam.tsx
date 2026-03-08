@@ -11,7 +11,14 @@ const CBTExam = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const exam = searchParams.get("exam") || "utme";
-  const subject = searchParams.get("subject") || "mathematics";
+
+  // Support multi-subject via comma-separated "subjects" param, fallback to single "subject"
+  const subjectsParam = searchParams.get("subjects") || searchParams.get("subject") || "mathematics";
+  const subjectList = subjectsParam.split(",").map((s) => s.trim()).filter(Boolean);
+
+  const totalQuestions = Math.max(Number(searchParams.get("questions")) || 20, 10);
+  const totalTimeMins = Math.max(Number(searchParams.get("time")) || 30, 1);
+
   const gate = useSubscriptionGate();
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -21,41 +28,51 @@ const CBTExam = () => {
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [flagged, setFlagged] = useState<Set<number>>(new Set());
-  const [timeLeft, setTimeLeft] = useState(30 * 60);
+  const [timeLeft, setTimeLeft] = useState(totalTimeMins * 60);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [started, setStarted] = useState(false);
 
+  // Fetch questions for all selected subjects
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetchQuestions(subject, exam, 20)
-      .then((qs) => {
-        if (qs.length === 0) {
+
+    const perSubject = Math.ceil(totalQuestions / subjectList.length);
+
+    Promise.all(subjectList.map((sub) => fetchQuestions(sub, exam, perSubject)))
+      .then((results) => {
+        // Combine, shuffle, and trim to exact count
+        const combined = results.flat();
+        const shuffled = combined.sort(() => Math.random() - 0.5).slice(0, totalQuestions);
+        if (shuffled.length === 0) {
           setError("No questions available. Please try another subject.");
         } else {
-          setQuestions(qs);
+          setQuestions(shuffled);
           setStarted(true);
         }
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [subject, exam]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subjectsParam, exam, totalQuestions]);
 
   const handleSubmit = useCallback(async () => {
     if (questions.length === 0) return;
     const score = questions.reduce((acc, q, i) => acc + (answers[i] === q.correct ? 1 : 0), 0);
-    const elapsed = 30 * 60 - timeLeft;
+    const elapsed = totalTimeMins * 60 - timeLeft;
     await saveAttempt({
       examSlug: exam,
-      subject,
+      subject: subjectList.join(", "),
       mode: "mock",
       totalQuestions: questions.length,
       correctAnswers: score,
       timeSpentSeconds: elapsed,
       answers,
     });
-    navigate(`/results?score=${score}&total=${questions.length}&exam=${exam}&subject=${encodeURIComponent(subject)}&mode=mock&time=${elapsed}`);
-  }, [answers, navigate, exam, subject, questions, timeLeft]);
+    navigate(
+      `/results?score=${score}&total=${questions.length}&exam=${exam}&subject=${encodeURIComponent(subjectList.join(", "))}&mode=mock&time=${elapsed}`
+    );
+  }, [answers, navigate, exam, subjectList, questions, timeLeft, totalTimeMins]);
 
   useEffect(() => {
     if (!started) return;
@@ -73,8 +90,10 @@ const CBTExam = () => {
   }, [started, handleSubmit]);
 
   const formatTime = (s: number) => {
-    const m = Math.floor(s / 60);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
     const sec = s % 60;
+    if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
     return `${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
   };
 
@@ -123,7 +142,10 @@ const CBTExam = () => {
       {/* Top Bar */}
       <div className="sticky top-0 z-50 border-b border-border bg-card px-4 py-3">
         <div className="flex items-center justify-between">
-          <div className="font-display text-sm font-bold">{exam.toUpperCase()} Mock Exam</div>
+          <div>
+            <div className="font-display text-sm font-bold">{exam.toUpperCase()} Mock Exam</div>
+            <div className="text-xs text-muted-foreground">{subjectList.length} subjects · {questions.length} questions</div>
+          </div>
           <div className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold ${isUrgent ? "bg-destructive/10 text-destructive" : "bg-muted"}`}>
             <Clock className="h-4 w-4" />
             {formatTime(timeLeft)}
@@ -136,9 +158,14 @@ const CBTExam = () => {
         <div className="flex-1 px-4 py-6 lg:px-12">
           <div className="mx-auto max-w-2xl">
             <div className="mb-4 flex items-center justify-between">
-              <span className="font-display text-sm font-bold text-muted-foreground">
-                Question {current + 1} of {questions.length}
-              </span>
+              <div>
+                <span className="font-display text-sm font-bold text-muted-foreground">
+                  Question {current + 1} of {questions.length}
+                </span>
+                {q.section && (
+                  <span className="ml-2 rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">{q.section}</span>
+                )}
+              </div>
               <button
                 onClick={() => {
                   const s = new Set(flagged);
@@ -195,7 +222,7 @@ const CBTExam = () => {
         {/* Question Palette */}
         <div className="border-t lg:border-t-0 lg:border-l border-border bg-card p-4 lg:w-64">
           <h3 className="mb-3 font-display text-sm font-bold">Question Navigator</h3>
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-5 gap-2 max-h-80 overflow-y-auto">
             {questions.map((_, i) => (
               <button
                 key={i}

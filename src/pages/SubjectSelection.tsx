@@ -98,7 +98,7 @@ const SubjectSelection = () => {
 
         <div className="mt-8 text-center">
           <Button variant="secondary" size="lg" asChild>
-            <Link to={`/mock-exam?exam=${examId}`}>Take Full Mock Exam <ArrowRight className="ml-1 h-4 w-4" /></Link>
+            <Link to={`/mock-setup?exam=${examId}`}>Take Full Mock Exam <ArrowRight className="ml-1 h-4 w-4" /></Link>
           </Button>
         </div>
       </main>
