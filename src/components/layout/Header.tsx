@@ -19,7 +19,7 @@ const Header = () => {
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <img src={cbtviseLogo} alt="CBTWise logo" className="h-9 w-9 rounded-lg object-contain" />
+          <img src={cbtwiseLogo} alt="CBTWise logo" className="h-9 w-9 rounded-lg object-contain" />
           <span className="font-display text-xl font-bold text-foreground">
             CBT<span className="text-primary">Wise</span>
           </span>

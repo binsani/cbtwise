@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import cbtviseLogo from "@/assets/cbtwise-logo.png";
+import cbtwiseLogo from "@/assets/cbtwise-logo.png";
 
 const Footer = () => {
   return (
@@ -8,7 +8,7 @@ const Footer = () => {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <Link to="/" className="mb-4 flex items-center gap-2">
-              <img src={cbtviseLogo} alt="CBTWise logo" className="h-8 w-8 rounded-lg object-contain" />
+              <img src={cbtwiseLogo} alt="CBTWise logo" className="h-8 w-8 rounded-lg object-contain" />
               <span className="font-display text-lg font-bold">CBTWise</span>
             </Link>
             <p className="text-sm text-muted-foreground">
