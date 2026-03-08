@@ -153,6 +153,19 @@ const PracticeMode = () => {
           </p>
         </div>
 
+        {failedSubjects.length > 0 && (
+          <div className="mb-4 flex items-start gap-3 rounded-xl border border-accent/30 bg-accent/5 p-4">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+            <div>
+              <p className="text-sm font-medium">Some subjects couldn't be loaded</p>
+              <p className="text-xs text-muted-foreground">
+                Questions for <span className="font-semibold">{failedSubjects.join(", ")}</span> were unavailable.
+                Continuing with {questions.length} questions from the remaining subjects.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Question Card */}
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
