@@ -455,6 +455,9 @@ const AdminQuestionsPage = () => {
       description={`${questions.length} questions in bank`}
       actions={
         <div className="flex gap-2">
+          <Button onClick={openAiDialog} size="sm" variant="secondary">
+            <Sparkles className="mr-1 h-4 w-4" /> AI Generate
+          </Button>
           <Button onClick={openCsvDialog} size="sm" variant="outline">
             <Upload className="mr-1 h-4 w-4" /> Import CSV
           </Button>
