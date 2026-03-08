@@ -70,7 +70,13 @@ const PracticeMode = () => {
             return { ...q, options: indices.map((i) => q.options[i]), correct: indices.indexOf(q.correct) };
           });
         }
-        setQuestions(combined.slice(0, totalQuestions));
+        const final = combined.slice(0, totalQuestions);
+        setQuestions(final);
+        if (final.length < totalQuestions) {
+          import("sonner").then(({ toast }) => {
+            toast.info(`${final.length} questions available out of ${totalQuestions} requested.`);
+          });
+        }
       })
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps

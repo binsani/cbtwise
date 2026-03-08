@@ -115,9 +115,14 @@ const CBTExam = () => {
             };
           });
         }
-        const shuffled = combined.slice(0, totalQuestions);
-        setQuestions(shuffled);
+        const final = combined.slice(0, totalQuestions);
+        setQuestions(final);
         setStarted(true);
+        if (final.length < totalQuestions) {
+          import("sonner").then(({ toast }) => {
+            toast.info(`${final.length} questions available out of ${totalQuestions} requested. Starting with what's available.`);
+          });
+        }
       })
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
