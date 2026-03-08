@@ -133,6 +133,49 @@ const CBTExam = () => {
     return () => clearInterval(timer);
   }, [started, handleSubmit]);
 
+  // Keyboard shortcuts: Arrow keys navigate, A-E/1-5 select options, F flags
+  useEffect(() => {
+    if (!started || questions.length === 0) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (showSubmitModal || showCalculator || showReport) return;
+      switch (e.key) {
+        case "ArrowRight": case "ArrowDown":
+          e.preventDefault();
+          setCurrent((c) => Math.min(questions.length - 1, c + 1));
+          break;
+        case "ArrowLeft": case "ArrowUp":
+          e.preventDefault();
+          setCurrent((c) => Math.max(0, c - 1));
+          break;
+        case "a": case "A": case "1":
+          if (questions[current]?.options.length > 0) setAnswers((a) => ({ ...a, [current]: 0 }));
+          break;
+        case "b": case "B": case "2":
+          if (questions[current]?.options.length > 1) setAnswers((a) => ({ ...a, [current]: 1 }));
+          break;
+        case "c": case "C": case "3":
+          if (questions[current]?.options.length > 2) setAnswers((a) => ({ ...a, [current]: 2 }));
+          break;
+        case "d": case "D": case "4":
+          if (questions[current]?.options.length > 3) setAnswers((a) => ({ ...a, [current]: 3 }));
+          break;
+        case "e": case "E": case "5":
+          if (questions[current]?.options.length > 4) setAnswers((a) => ({ ...a, [current]: 4 }));
+          break;
+        case "f": case "F":
+          setFlagged((prev) => {
+            const s = new Set(prev);
+            if (s.has(current)) s.delete(current); else s.add(current);
+            return s;
+          });
+          break;
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [started, current, questions, showSubmitModal, showCalculator, showReport]);
+
   const formatTime = (s: number) => {
     const h = Math.floor(s / 3600);
     const m = Math.floor((s % 3600) / 60);
