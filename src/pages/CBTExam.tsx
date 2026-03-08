@@ -236,6 +236,13 @@ const CBTExam = () => {
       <div className="sticky top-0 z-50 border-b border-border bg-card shadow-sm">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowEndModal(true)}
+              className="flex items-center gap-1.5 rounded-lg bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/20 transition-colors"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              End Exam
+            </button>
             <div>
               <div className="font-display text-sm font-bold">{exam.toUpperCase()} Mock Exam</div>
               {failedSubjects.length > 0 && (
