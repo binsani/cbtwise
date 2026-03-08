@@ -153,6 +153,12 @@ const AdminQuestionsPage = () => {
   const [importResult, setImportResult] = useState({ success: 0, failed: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // AI generator state
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [aiForm, setAiForm] = useState({ exam_id: "", subject_id: "", topic: "", difficulty: "Medium", count: 5 });
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiResult, setAiResult] = useState<{ saved: number; failed: number; questions: any[] } | null>(null);
+
   useEffect(() => { fetchAll(); }, []);
 
   const fetchAll = async () => {
