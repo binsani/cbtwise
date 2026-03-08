@@ -168,6 +168,9 @@ const CBTExam = () => {
           <div>
             <div className="font-display text-sm font-bold">{exam.toUpperCase()} Mock Exam</div>
             <div className="text-xs text-muted-foreground">{subjectList.length} subjects · {questions.length} questions</div>
+            {failedSubjects.length > 0 && (
+              <div className="text-xs text-accent font-medium">⚠ {failedSubjects.join(", ")} unavailable</div>
+            )}
           </div>
           <div className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold ${isUrgent ? "bg-destructive/10 text-destructive" : "bg-muted"}`}>
             <Clock className="h-4 w-4" />
