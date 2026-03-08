@@ -61,19 +61,37 @@ const CBTExam = () => {
     setLoading(true);
     setError(null);
     setFailedSubjects([]);
+    setLoadProgress({ loaded: 0, total: subjectList.length, currentSubject: subjectList[0] || "" });
 
     const perSubject = Math.ceil(totalQuestions / subjectList.length);
 
-    Promise.allSettled(subjectList.map((sub) => fetchQuestions(sub, exam, perSubject)))
+    // Fetch each subject individually to track progress
+    const failed: string[] = [];
+    let combined: TaggedQuestion[] = [];
+
+    const fetchSubject = async (sub: string, idx: number) => {
+      try {
+        const qs = await fetchQuestions(sub, exam, perSubject);
+        const tagged = qs.map((q) => ({ ...q, _subject: sub }));
+        return { status: "fulfilled" as const, tagged };
+      } catch {
+        return { status: "rejected" as const, subject: sub };
+      } finally {
+        setLoadProgress((prev) => ({
+          loaded: prev.loaded + 1,
+          total: prev.total,
+          currentSubject: subjectList[Math.min(idx + 1, subjectList.length - 1)] || "",
+        }));
+      }
+    };
+
+    Promise.all(subjectList.map((sub, idx) => fetchSubject(sub, idx)))
       .then((results) => {
-        const failed: string[] = [];
-        let combined: TaggedQuestion[] = [];
-        results.forEach((result, idx) => {
+        results.forEach((result) => {
           if (result.status === "fulfilled") {
-            const tagged = result.value.map((q) => ({ ...q, _subject: subjectList[idx] }));
-            combined = combined.concat(tagged);
+            combined = combined.concat(result.tagged);
           } else {
-            failed.push(subjectList[idx]);
+            failed.push(result.subject);
           }
         });
         setFailedSubjects(failed);
