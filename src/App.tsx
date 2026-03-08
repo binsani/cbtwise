@@ -28,6 +28,7 @@ import AdminQuestions from "./pages/AdminQuestions";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
+import TawkToChat from "@/components/TawkToChat";
 
 const queryClient = new QueryClient();
 
