@@ -78,7 +78,7 @@ const CBTExam = () => {
     return `${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
   };
 
-  if (loading) {
+  if (gate.loading || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
@@ -86,6 +86,18 @@ const CBTExam = () => {
           <p className="mt-4 text-sm text-muted-foreground">Loading exam questions…</p>
         </div>
       </div>
+    );
+  }
+
+  if (!gate.canStartMock) {
+    return (
+      <UpgradeGate
+        title="Mock Exam Limit Reached"
+        message={`Free users can take ${gate.monthlyMocksLimit} mock exams per month. Upgrade to Premium for unlimited access.`}
+        used={gate.monthlyMocksUsed}
+        limit={gate.monthlyMocksLimit}
+        unit="Mock exams"
+      />
     );
   }
 
