@@ -19,6 +19,12 @@ interface Activity {
   time: string;
 }
 
+interface SubjectCoverage {
+  name: string;
+  examName: string;
+  count: number;
+}
+
 function getTimeAgo(date: Date): string {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
   if (seconds < 60) return "just now";
