@@ -39,6 +39,7 @@ function getTimeAgo(date: Date): string {
 const AdminOverview = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [activity, setActivity] = useState<Activity[]>([]);
+  const [coverage, setCoverage] = useState<SubjectCoverage[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
