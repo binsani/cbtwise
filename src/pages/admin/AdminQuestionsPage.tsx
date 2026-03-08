@@ -140,6 +140,11 @@ const AdminQuestionsPage = () => {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Question | null>(null);
 
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
   // CSV import state
   const [csvDialogOpen, setCsvDialogOpen] = useState(false);
   const [csvStep, setCsvStep] = useState<"upload" | "preview" | "importing" | "done">("upload");
