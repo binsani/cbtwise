@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { Users, BookOpen, FileQuestion, BarChart3, TrendingUp, Loader2, CreditCard, MessageSquare } from "lucide-react";
+import { Users, BookOpen, FileQuestion, BarChart3, TrendingUp, Loader2, CreditCard, MessageSquare, Database } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Progress } from "@/components/ui/progress";
 
 interface Stats {
   totalUsers: number;
@@ -16,6 +17,12 @@ interface Activity {
   user: string;
   action: string;
   time: string;
+}
+
+interface SubjectCoverage {
+  name: string;
+  examName: string;
+  count: number;
 }
 
 function getTimeAgo(date: Date): string {
@@ -32,6 +39,7 @@ function getTimeAgo(date: Date): string {
 const AdminOverview = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [activity, setActivity] = useState<Activity[]>([]);
+  const [coverage, setCoverage] = useState<SubjectCoverage[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -71,6 +79,44 @@ const AdminOverview = () => {
           }))
         );
       }
+
+      // Fetch question coverage per subject
+      const { data: allQuestions } = await supabase
+        .from("questions")
+        .select("subject_id")
+        .eq("is_active", true);
+
+      if (allQuestions) {
+        const countBySubject: Record<string, number> = {};
+        allQuestions.forEach((q) => {
+          countBySubject[q.subject_id] = (countBySubject[q.subject_id] || 0) + 1;
+        });
+
+        const { data: subjects } = await supabase
+          .from("subjects")
+          .select("id, name, exam_id")
+          .eq("is_active", true);
+        const { data: exams } = await supabase
+          .from("exams")
+          .select("id, name")
+          .eq("is_active", true);
+
+        if (subjects && exams) {
+          const examMap: Record<string, string> = {};
+          exams.forEach((e) => { examMap[e.id] = e.name; });
+
+          const coverageData: SubjectCoverage[] = subjects
+            .map((s) => ({
+              name: s.name,
+              examName: examMap[s.exam_id] || "Unknown",
+              count: countBySubject[s.id] || 0,
+            }))
+            .sort((a, b) => b.count - a.count);
+
+          setCoverage(coverageData);
+        }
+      }
+
       setLoading(false);
     };
     fetchData();
@@ -159,6 +205,38 @@ const AdminOverview = () => {
               ))
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Question Coverage by Subject */}
+      <div className="mt-6 rounded-xl border border-border bg-card">
+        <div className="border-b border-border p-4 flex items-center gap-2">
+          <Database className="h-5 w-5 text-primary" />
+          <h2 className="font-display text-lg font-bold">Local Question Coverage</h2>
+          <span className="ml-auto text-xs text-muted-foreground">
+            {coverage.reduce((sum, c) => sum + c.count, 0).toLocaleString()} total questions
+          </span>
+        </div>
+        <div className="p-4">
+          {coverage.length === 0 ? (
+            <div className="text-sm text-muted-foreground">No subjects found. Add exams and subjects first.</div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {coverage.map((c) => {
+                const maxCount = coverage[0]?.count || 1;
+                return (
+                  <div key={`${c.examName}-${c.name}`} className="rounded-lg border border-border p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium truncate">{c.name}</span>
+                      <span className="text-xs font-semibold text-primary ml-2">{c.count}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mb-2">{c.examName}</div>
+                    <Progress value={maxCount > 0 ? (c.count / maxCount) * 100 : 0} className="h-1.5" />
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </AdminLayout>
