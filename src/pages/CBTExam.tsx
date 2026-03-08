@@ -39,6 +39,7 @@ const CBTExam = () => {
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [started, setStarted] = useState(false);
   const [activeSubjectTab, setActiveSubjectTab] = useState<string | null>(null);
+  const [showCalculator, setShowCalculator] = useState(false);
 
   // Build subject → question index map
   const subjectQuestionMap = useMemo(() => {
