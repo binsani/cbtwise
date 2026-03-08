@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Clock, BookOpen, ListChecks, GraduationCap, Shuffle, Play, Info } from "lucide-react";
+import { Loader2, Clock, BookOpen, ListChecks, GraduationCap, Shuffle, Play, Info, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -171,6 +171,9 @@ const MockExamSetup = () => {
       <Header />
       <main className="container max-w-3xl py-10">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+          <Button variant="ghost" size="sm" asChild className="mb-4 -ml-2 text-muted-foreground hover:text-foreground">
+            <Link to="/exams"><ArrowLeft className="mr-1.5 h-4 w-4" /> Back to Exams</Link>
+          </Button>
           <h1 className="font-display text-3xl font-bold mb-1">Configure Your Session</h1>
           <p className="text-muted-foreground mb-8">Customize your practice or mock exam settings.</p>
 
