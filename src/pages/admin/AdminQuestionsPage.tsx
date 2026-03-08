@@ -797,6 +797,101 @@ const AdminQuestionsPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* AI Generate Dialog */}
+      <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" /> AI Question Generator
+            </DialogTitle>
+            <DialogDescription>
+              Generate practice questions using AI. Select an exam, subject, and optionally a topic.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label>Exam *</Label>
+              <Select value={aiForm.exam_id} onValueChange={(v) => setAiForm({ ...aiForm, exam_id: v, subject_id: "" })}>
+                <SelectTrigger><SelectValue placeholder="Select exam" /></SelectTrigger>
+                <SelectContent>
+                  {exams.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Subject *</Label>
+              <Select value={aiForm.subject_id} onValueChange={(v) => setAiForm({ ...aiForm, subject_id: v })} disabled={!aiForm.exam_id}>
+                <SelectTrigger><SelectValue placeholder={aiForm.exam_id ? "Select subject" : "Select exam first"} /></SelectTrigger>
+                <SelectContent>
+                  {aiFilteredSubjects.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Topic (optional)</Label>
+              <Input
+                placeholder="e.g. Photosynthesis, Algebra, Civil War..."
+                value={aiForm.topic}
+                onChange={(e) => setAiForm({ ...aiForm, topic: e.target.value })}
+              />
+            </div>
+
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <Label>Difficulty</Label>
+                <Select value={aiForm.difficulty} onValueChange={(v) => setAiForm({ ...aiForm, difficulty: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Easy">Easy</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="Hard">Hard</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-24">
+                <Label>Count</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={aiForm.count}
+                  onChange={(e) => setAiForm({ ...aiForm, count: Math.min(20, Math.max(1, parseInt(e.target.value) || 1)) })}
+                />
+              </div>
+            </div>
+
+            {aiResult && (
+              <div className="rounded-lg border border-border bg-muted/50 p-3 text-sm">
+                <p className="font-medium flex items-center gap-1">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  {aiResult.saved} question{aiResult.saved !== 1 ? "s" : ""} saved
+                  {aiResult.failed > 0 && <span className="text-destructive ml-2">({aiResult.failed} failed)</span>}
+                </p>
+                <ul className="mt-2 space-y-1 max-h-40 overflow-y-auto">
+                  {aiResult.questions.map((q: any, i: number) => (
+                    <li key={i} className="text-xs text-muted-foreground truncate">• {q.text}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAiDialogOpen(false)}>Close</Button>
+            <Button onClick={handleAiGenerate} disabled={aiGenerating || !aiForm.exam_id || !aiForm.subject_id}>
+              {aiGenerating ? <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Generating...</> : <><Sparkles className="mr-1 h-4 w-4" /> Generate</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
