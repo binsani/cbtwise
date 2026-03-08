@@ -28,6 +28,7 @@ import AdminQuestions from "./pages/AdminQuestions";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
+import TawkToChat from "@/components/TawkToChat";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/admin/questions" element={<AdminRoute><AdminQuestions /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <TawkToChat />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
