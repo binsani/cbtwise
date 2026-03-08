@@ -4,6 +4,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Clock, BarChart3, Trophy, Flame, ArrowRight, Loader2, Sparkles, GraduationCap, Zap } from "lucide-react";
+import DailyQuote from "@/components/dashboard/DailyQuote";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
