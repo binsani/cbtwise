@@ -361,21 +361,32 @@ const CBTExam = () => {
               })}
             </div>
 
-            {/* Mobile flag button */}
-            <button
-              onClick={() => {
-                const s = new Set(flagged);
-                if (s.has(current)) s.delete(current);
-                else s.add(current);
-                setFlagged(s);
-              }}
-              className={`mt-4 flex sm:hidden items-center gap-1.5 text-xs font-medium ${
-                flagged.has(current) ? "text-accent" : "text-muted-foreground"
-              }`}
-            >
-              <Flag className={`h-3.5 w-3.5 ${flagged.has(current) ? "fill-accent" : ""}`} />
-              {flagged.has(current) ? "Flagged for review" : "Flag for review"}
-            </button>
+            {/* Mobile toolbar */}
+            <div className="mt-4 flex sm:hidden items-center gap-4">
+              <button
+                onClick={() => {
+                  const s = new Set(flagged);
+                  if (s.has(current)) s.delete(current);
+                  else s.add(current);
+                  setFlagged(s);
+                }}
+                className={`flex items-center gap-1.5 text-xs font-medium ${
+                  flagged.has(current) ? "text-accent" : "text-muted-foreground"
+                }`}
+              >
+                <Flag className={`h-3.5 w-3.5 ${flagged.has(current) ? "fill-accent" : ""}`} />
+                {flagged.has(current) ? "Flagged" : "Flag"}
+              </button>
+              <button
+                onClick={() => setShowCalculator((v) => !v)}
+                className={`flex items-center gap-1.5 text-xs font-medium ${
+                  showCalculator ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                <Calculator className="h-3.5 w-3.5" />
+                Calculator
+              </button>
+            </div>
           </div>
         </div>
       </div>
