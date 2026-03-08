@@ -8,7 +8,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { useSubscriptionGate } from "@/hooks/use-subscription-gate";
-import { formatDistanceToNow } from "date-fns";
 
 interface Attempt {
   exam_slug: string;
