@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import ExamBreadcrumb from "@/components/ExamBreadcrumb";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -63,9 +64,7 @@ const SubjectSelection = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container py-12">
-        <div className="mb-2">
-          <Link to="/exams" className="text-sm text-primary hover:underline">← Back to Exams</Link>
-        </div>
+        <ExamBreadcrumb items={[{ label: "Exams", href: "/exams" }, { label: examName }]} />
         <div className="mb-10">
           <h1 className="font-display text-3xl font-bold md:text-4xl">{examName} Subjects</h1>
           <p className="text-muted-foreground">Choose a subject to start practising.</p>

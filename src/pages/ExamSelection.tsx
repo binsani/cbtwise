@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
+import ExamBreadcrumb from "@/components/ExamBreadcrumb";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Loader2 } from "lucide-react";
@@ -48,6 +49,7 @@ const ExamSelection = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container py-12">
+        <ExamBreadcrumb items={[{ label: "Exams" }]} />
         <div className="mx-auto max-w-2xl text-center mb-10">
           <h1 className="font-display text-3xl font-bold md:text-4xl mb-2">Select an Exam</h1>
           <p className="text-muted-foreground">Choose the exam you're preparing for to get started.</p>
