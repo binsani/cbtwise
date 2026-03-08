@@ -56,7 +56,7 @@ const ExamCards = () => {
               </p>
               <div className="mb-4 text-sm font-semibold text-primary">{exam.questions} past questions</div>
               <Button variant="outline" size="sm" asChild className="w-full">
-                <Link to="/exams">
+                <Link to={`/mock-setup?exam=${exam.name.toLowerCase().split(" ")[0]}`}>
                   Practice Now <ArrowRight className="ml-1 h-3.5 w-3.5" />
                 </Link>
               </Button>
