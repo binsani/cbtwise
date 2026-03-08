@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
-import { Bell, Flag, UserPlus, MessageSquare } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Bell, Flag, UserPlus, MessageSquare, Volume2, VolumeX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface Notification {
   id: string;
@@ -15,12 +16,62 @@ interface Notification {
   created_at: string;
 }
 
+// Generate a short notification sound using Web Audio API
+function playNotificationSound() {
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.3);
+  } catch {
+    // Audio not supported
+  }
+}
+
+function requestBrowserPermission() {
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+}
+
+function showBrowserNotification(title: string, body: string) {
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification(title, { body, icon: "/favicon.png" });
+  }
+}
+
 export default function AdminNotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    const stored = localStorage.getItem("admin_sound_enabled");
+    return stored !== "false";
+  });
   const navigate = useNavigate();
+  const initialLoadDone = useRef(false);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
+
+  const handleNewNotification = useCallback((n: Notification) => {
+    if (!initialLoadDone.current) return;
+
+    // Play sound
+    if (soundEnabled) playNotificationSound();
+
+    // Browser notification
+    showBrowserNotification(n.title, n.message);
+
+    // In-app toast
+    toast(n.title, { description: n.message });
+  }, [soundEnabled]);
 
   const fetchNotifications = async () => {
     const { data } = await supabase
@@ -29,9 +80,11 @@ export default function AdminNotificationBell() {
       .order("created_at", { ascending: false })
       .limit(20) as any;
     if (data) setNotifications(data);
+    initialLoadDone.current = true;
   };
 
   useEffect(() => {
+    requestBrowserPermission();
     fetchNotifications();
 
     const channel = supabase
@@ -40,13 +93,15 @@ export default function AdminNotificationBell() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "admin_notifications" },
         (payload) => {
-          setNotifications((prev) => [payload.new as Notification, ...prev].slice(0, 20));
+          const newNotif = payload.new as Notification;
+          setNotifications((prev) => [newNotif, ...prev].slice(0, 20));
+          handleNewNotification(newNotif);
         }
       )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [handleNewNotification]);
 
   const markAllRead = async () => {
     const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id);
@@ -84,18 +139,35 @@ export default function AdminNotificationBell() {
     return `${Math.floor(hrs / 24)}d ago`;
   };
 
+  const toggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    localStorage.setItem("admin_sound_enabled", String(next));
+    if (next) playNotificationSound(); // preview the sound
+  };
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
-          )}
-        </Button>
-      </PopoverTrigger>
+    <div className="flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8"
+        onClick={toggleSound}
+        title={soundEnabled ? "Mute notifications" : "Unmute notifications"}
+      >
+        {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4 text-muted-foreground" />}
+      </Button>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </Button>
+        </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <h4 className="text-sm font-semibold">Notifications</h4>
@@ -139,5 +211,6 @@ export default function AdminNotificationBell() {
         </div>
       </PopoverContent>
     </Popover>
+    </div>
   );
 }
