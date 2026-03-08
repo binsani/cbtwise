@@ -1,14 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Edit, Trash2, Loader2 } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Loader2, Upload, Download, CheckCircle2, XCircle, FileSpreadsheet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -18,12 +18,113 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type Question = Tables<"questions">;
 interface ExamOption { id: string; name: string; slug: string }
-interface SubjectOption { id: string; name: string; exam_id: string }
+interface SubjectOption { id: string; name: string; exam_id: string; slug: string }
 
 const defaultForm = {
   text: "", exam_id: "", subject_id: "", options: ["", "", "", ""],
   correct_index: 0, explanation: "", topic: "", difficulty: "Medium", year: new Date().getFullYear(),
 };
+
+interface CsvRow {
+  row: number;
+  text: string;
+  exam_slug: string;
+  subject_slug: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_option: string;
+  explanation: string;
+  topic: string;
+  difficulty: string;
+  year: string;
+}
+
+interface ValidatedRow {
+  row: number;
+  valid: boolean;
+  errors: string[];
+  payload?: {
+    text: string;
+    exam_id: string;
+    subject_id: string;
+    options: string[];
+    correct_index: number;
+    explanation: string | null;
+    topic: string | null;
+    difficulty: string;
+    year: number | null;
+  };
+  original: CsvRow;
+}
+
+function parseCSV(text: string): CsvRow[] {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length < 2) return [];
+
+  const headerLine = lines[0];
+  const headers = parseCSVLine(headerLine).map((h) => h.trim().toLowerCase().replace(/\s+/g, "_"));
+
+  const rows: CsvRow[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCSVLine(lines[i]);
+    const obj: Record<string, string> = {};
+    headers.forEach((h, idx) => { obj[h] = (values[idx] ?? "").trim(); });
+    rows.push({
+      row: i + 1,
+      text: obj.text || obj.question || obj.question_text || "",
+      exam_slug: obj.exam_slug || obj.exam || "",
+      subject_slug: obj.subject_slug || obj.subject || "",
+      option_a: obj.option_a || obj.a || "",
+      option_b: obj.option_b || obj.b || "",
+      option_c: obj.option_c || obj.c || "",
+      option_d: obj.option_d || obj.d || "",
+      correct_option: obj.correct_option || obj.correct || obj.answer || "",
+      explanation: obj.explanation || "",
+      topic: obj.topic || "",
+      difficulty: obj.difficulty || "Medium",
+      year: obj.year || "",
+    });
+  }
+  return rows;
+}
+
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (i + 1 < line.length && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        current += ch;
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ",") {
+        result.push(current);
+        current = "";
+      } else {
+        current += ch;
+      }
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+const TEMPLATE_CSV = `text,exam_slug,subject_slug,option_a,option_b,option_c,option_d,correct_option,explanation,topic,difficulty,year
+"What is the capital of Nigeria?",utme,geography,Lagos,Abuja,Kano,Ibadan,B,"Abuja has been the capital since 1991.",Capitals,Easy,2024
+"Solve: 2x + 4 = 10",utme,mathematics,x=2,x=3,x=4,x=5,B,"2x = 6, so x = 3.",Algebra,Medium,2024`;
 
 const AdminQuestionsPage = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -38,6 +139,13 @@ const AdminQuestionsPage = () => {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Question | null>(null);
 
+  // CSV import state
+  const [csvDialogOpen, setCsvDialogOpen] = useState(false);
+  const [csvStep, setCsvStep] = useState<"upload" | "preview" | "importing" | "done">("upload");
+  const [csvValidated, setCsvValidated] = useState<ValidatedRow[]>([]);
+  const [importResult, setImportResult] = useState({ success: 0, failed: 0 });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => { fetchAll(); }, []);
 
   const fetchAll = async () => {
@@ -45,16 +153,22 @@ const AdminQuestionsPage = () => {
     const [qRes, eRes, sRes] = await Promise.all([
       supabase.from("questions").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("exams").select("id, name, slug"),
-      supabase.from("subjects").select("id, name, exam_id"),
+      supabase.from("subjects").select("id, name, exam_id, slug"),
     ]);
     setQuestions(qRes.data ?? []);
-    setExams(eRes.data ?? []);
-    setSubjects(sRes.data ?? []);
+    setExams((eRes.data ?? []) as ExamOption[]);
+    setSubjects((sRes.data ?? []) as SubjectOption[]);
     setLoading(false);
   };
 
   const examMap = Object.fromEntries(exams.map((e) => [e.id, e]));
   const subjectMap = Object.fromEntries(subjects.map((s) => [s.id, s]));
+  const examBySlug = Object.fromEntries(exams.map((e) => [e.slug.toLowerCase(), e]));
+  const subjectBySlugAndExam = new Map<string, SubjectOption>();
+  subjects.forEach((s) => {
+    subjectBySlugAndExam.set(`${s.exam_id}::${s.slug.toLowerCase()}`, s);
+    subjectBySlugAndExam.set(`${s.exam_id}::${s.name.toLowerCase()}`, s);
+  });
 
   const filtered = questions.filter((q) => {
     const matchSearch = q.text.toLowerCase().includes(search.toLowerCase()) || (subjectMap[q.subject_id]?.name ?? "").toLowerCase().includes(search.toLowerCase());
@@ -106,11 +220,138 @@ const AdminQuestionsPage = () => {
     setDeleteTarget(null);
   };
 
+  // CSV import logic
+  const openCsvDialog = () => {
+    setCsvStep("upload");
+    setCsvValidated([]);
+    setImportResult({ success: 0, failed: 0 });
+    setCsvDialogOpen(true);
+  };
+
+  const downloadTemplate = () => {
+    const blob = new Blob([TEMPLATE_CSV], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "questions_template.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.name.endsWith(".csv")) {
+      toast.error("Please select a CSV file."); return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const rows = parseCSV(text);
+      if (rows.length === 0) {
+        toast.error("No data rows found in CSV."); return;
+      }
+      const validated = validateRows(rows);
+      setCsvValidated(validated);
+      setCsvStep("preview");
+    };
+    reader.readAsText(file);
+    // Reset input so same file can be re-selected
+    e.target.value = "";
+  };
+
+  const validateRows = (rows: CsvRow[]): ValidatedRow[] => {
+    return rows.map((r) => {
+      const errors: string[] = [];
+
+      if (!r.text.trim()) errors.push("Missing question text");
+      if (!r.option_a.trim() || !r.option_b.trim() || !r.option_c.trim() || !r.option_d.trim()) {
+        errors.push("All 4 options required");
+      }
+
+      const correctMap: Record<string, number> = { A: 0, B: 1, C: 2, D: 3 };
+      const correctKey = r.correct_option.trim().toUpperCase();
+      if (!(correctKey in correctMap)) errors.push("correct_option must be A, B, C, or D");
+
+      const exam = examBySlug[r.exam_slug.toLowerCase()];
+      if (!exam) errors.push(`Unknown exam: "${r.exam_slug}"`);
+
+      let subject: SubjectOption | undefined;
+      if (exam) {
+        subject = subjectBySlugAndExam.get(`${exam.id}::${r.subject_slug.toLowerCase()}`);
+        if (!subject) errors.push(`Unknown subject: "${r.subject_slug}" for exam "${r.exam_slug}"`);
+      }
+
+      const difficulty = r.difficulty || "Medium";
+      if (!["Easy", "Medium", "Hard"].includes(difficulty)) errors.push(`Invalid difficulty: "${difficulty}"`);
+
+      const year = r.year ? parseInt(r.year, 10) : null;
+      if (r.year && (isNaN(year!) || year! < 1960 || year! > 2100)) errors.push(`Invalid year: "${r.year}"`);
+
+      const valid = errors.length === 0;
+      return {
+        row: r.row,
+        valid,
+        errors,
+        original: r,
+        ...(valid && exam && subject
+          ? {
+              payload: {
+                text: r.text.trim(),
+                exam_id: exam.id,
+                subject_id: subject.id,
+                options: [r.option_a.trim(), r.option_b.trim(), r.option_c.trim(), r.option_d.trim()],
+                correct_index: correctMap[correctKey],
+                explanation: r.explanation.trim() || null,
+                topic: r.topic.trim() || null,
+                difficulty,
+                year,
+              },
+            }
+          : {}),
+      };
+    });
+  };
+
+  const validRows = csvValidated.filter((r) => r.valid);
+  const invalidRows = csvValidated.filter((r) => !r.valid);
+
+  const handleBulkImport = async () => {
+    if (validRows.length === 0) { toast.error("No valid rows to import."); return; }
+    setCsvStep("importing");
+
+    const payloads = validRows.map((r) => r.payload!);
+    // Insert in batches of 50
+    let success = 0;
+    let failed = 0;
+    for (let i = 0; i < payloads.length; i += 50) {
+      const batch = payloads.slice(i, i + 50);
+      const { error } = await supabase.from("questions").insert(batch);
+      if (error) {
+        failed += batch.length;
+      } else {
+        success += batch.length;
+      }
+    }
+    setImportResult({ success, failed });
+    setCsvStep("done");
+    if (success > 0) fetchAll();
+  };
+
   return (
     <AdminLayout
       title="Questions"
       description={`${questions.length} questions in bank`}
-      actions={<Button onClick={openAdd} size="sm"><Plus className="mr-1 h-4 w-4" /> Add Question</Button>}
+      actions={
+        <div className="flex gap-2">
+          <Button onClick={openCsvDialog} size="sm" variant="outline">
+            <Upload className="mr-1 h-4 w-4" /> Import CSV
+          </Button>
+          <Button onClick={openAdd} size="sm">
+            <Plus className="mr-1 h-4 w-4" /> Add Question
+          </Button>
+        </div>
+      }
     >
       <div className="mb-4 flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
@@ -209,6 +450,182 @@ const AdminQuestionsPage = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSave} disabled={saving}>{saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}{editing ? "Update" : "Add"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* CSV Import Dialog */}
+      <Dialog open={csvDialogOpen} onOpenChange={(open) => { if (!open && csvStep !== "importing") setCsvDialogOpen(false); }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5" /> Bulk Import Questions
+            </DialogTitle>
+            <DialogDescription>
+              Upload a CSV file to import multiple questions at once.
+            </DialogDescription>
+          </DialogHeader>
+
+          {csvStep === "upload" && (
+            <div className="space-y-4">
+              <div className="rounded-lg border-2 border-dashed border-border p-8 text-center">
+                <Upload className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+                <p className="mb-1 font-medium">Drop your CSV file here or click to browse</p>
+                <p className="mb-4 text-xs text-muted-foreground">
+                  Columns: text, exam_slug, subject_slug, option_a, option_b, option_c, option_d, correct_option, explanation, topic, difficulty, year
+                </p>
+                <div className="flex justify-center gap-3">
+                  <Button onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="mr-1 h-4 w-4" /> Choose File
+                  </Button>
+                  <Button variant="outline" onClick={downloadTemplate}>
+                    <Download className="mr-1 h-4 w-4" /> Download Template
+                  </Button>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+              </div>
+
+              <div className="rounded-lg border border-border bg-muted/50 p-4">
+                <h4 className="mb-2 text-sm font-semibold">CSV Format Guide</h4>
+                <ul className="space-y-1 text-xs text-muted-foreground">
+                  <li>• <strong>text</strong> — The question text (required)</li>
+                  <li>• <strong>exam_slug</strong> — Exam identifier, e.g. <code>utme</code>, <code>waec</code>, <code>neco</code> (required)</li>
+                  <li>• <strong>subject_slug</strong> — Subject slug or name, e.g. <code>mathematics</code> (required)</li>
+                  <li>• <strong>option_a, option_b, option_c, option_d</strong> — Four answer options (required)</li>
+                  <li>• <strong>correct_option</strong> — A, B, C, or D (required)</li>
+                  <li>• <strong>explanation</strong> — Answer explanation (optional)</li>
+                  <li>• <strong>topic, difficulty, year</strong> — Additional metadata (optional)</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {csvStep === "preview" && (
+            <div className="space-y-4">
+              {/* Summary */}
+              <div className="flex gap-4">
+                <div className="flex-1 rounded-lg border border-border bg-card p-3 text-center">
+                  <div className="font-display text-2xl font-bold">{csvValidated.length}</div>
+                  <div className="text-xs text-muted-foreground">Total Rows</div>
+                </div>
+                <div className="flex-1 rounded-lg border border-primary/30 bg-primary/5 p-3 text-center">
+                  <div className="font-display text-2xl font-bold text-primary">{validRows.length}</div>
+                  <div className="text-xs text-muted-foreground">Valid</div>
+                </div>
+                {invalidRows.length > 0 && (
+                  <div className="flex-1 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-center">
+                    <div className="font-display text-2xl font-bold text-destructive">{invalidRows.length}</div>
+                    <div className="text-xs text-muted-foreground">Errors</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Error details */}
+              {invalidRows.length > 0 && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                  <h4 className="mb-2 text-sm font-semibold text-destructive">Rows with Errors (will be skipped)</h4>
+                  <div className="max-h-32 overflow-y-auto space-y-1">
+                    {invalidRows.map((r) => (
+                      <div key={r.row} className="flex items-start gap-2 text-xs">
+                        <XCircle className="mt-0.5 h-3 w-3 shrink-0 text-destructive" />
+                        <span>
+                          <strong>Row {r.row}:</strong> {r.errors.join("; ")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Preview table */}
+              <div className="rounded-lg border border-border overflow-hidden">
+                <div className="max-h-64 overflow-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/50">
+                        <th className="px-2 py-2 text-left">Row</th>
+                        <th className="px-2 py-2 text-left">Status</th>
+                        <th className="px-2 py-2 text-left">Question</th>
+                        <th className="px-2 py-2 text-left">Exam</th>
+                        <th className="px-2 py-2 text-left">Subject</th>
+                        <th className="px-2 py-2 text-left">Answer</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {csvValidated.slice(0, 50).map((r) => (
+                        <tr key={r.row} className={r.valid ? "hover:bg-muted/30" : "bg-destructive/5"}>
+                          <td className="px-2 py-1.5">{r.row}</td>
+                          <td className="px-2 py-1.5">
+                            {r.valid
+                              ? <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+                              : <XCircle className="h-3.5 w-3.5 text-destructive" />}
+                          </td>
+                          <td className="px-2 py-1.5 max-w-[200px] truncate">{r.original.text}</td>
+                          <td className="px-2 py-1.5">{r.original.exam_slug.toUpperCase()}</td>
+                          <td className="px-2 py-1.5">{r.original.subject_slug}</td>
+                          <td className="px-2 py-1.5">{r.original.correct_option.toUpperCase()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {csvValidated.length > 50 && (
+                  <div className="border-t border-border p-2 text-center text-xs text-muted-foreground">
+                    Showing first 50 of {csvValidated.length} rows
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {csvStep === "importing" && (
+            <div className="flex flex-col items-center py-8">
+              <Loader2 className="mb-4 h-10 w-10 animate-spin text-primary" />
+              <p className="font-medium">Importing {validRows.length} questions...</p>
+              <p className="text-xs text-muted-foreground">This may take a moment.</p>
+            </div>
+          )}
+
+          {csvStep === "done" && (
+            <div className="flex flex-col items-center py-8">
+              <CheckCircle2 className="mb-4 h-12 w-12 text-primary" />
+              <h3 className="mb-2 font-display text-lg font-bold">Import Complete</h3>
+              <div className="flex gap-6 text-center">
+                <div>
+                  <div className="font-display text-2xl font-bold text-primary">{importResult.success}</div>
+                  <div className="text-xs text-muted-foreground">Imported</div>
+                </div>
+                {importResult.failed > 0 && (
+                  <div>
+                    <div className="font-display text-2xl font-bold text-destructive">{importResult.failed}</div>
+                    <div className="text-xs text-muted-foreground">Failed</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            {csvStep === "upload" && (
+              <Button variant="outline" onClick={() => setCsvDialogOpen(false)}>Cancel</Button>
+            )}
+            {csvStep === "preview" && (
+              <>
+                <Button variant="outline" onClick={() => setCsvStep("upload")}>Back</Button>
+                <Button onClick={handleBulkImport} disabled={validRows.length === 0}>
+                  <Upload className="mr-1 h-4 w-4" /> Import {validRows.length} Questions
+                </Button>
+              </>
+            )}
+            {csvStep === "done" && (
+              <Button onClick={() => setCsvDialogOpen(false)}>Done</Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
