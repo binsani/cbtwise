@@ -64,7 +64,7 @@ const PricingTeaser = () => {
           <p className="text-muted-foreground">Start free. Upgrade when you're ready to go all in.</p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-4">
           {plans.map((plan, i) => (
             <motion.div
               key={plan.name}

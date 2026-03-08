@@ -56,7 +56,7 @@ const Pricing = () => {
           <p className="text-muted-foreground">Start free. Upgrade when you're ready to go all in on your exam prep.</p>
         </div>
 
-        <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-3">
+        <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-4">
           {plans.map((plan) => (
             <div
               key={plan.name}
