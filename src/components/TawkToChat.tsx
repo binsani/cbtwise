@@ -1,9 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, forwardRef } from "react";
 
 const TAWK_PROPERTY_ID = "69ad4837d4bfc51c39810ea7";
 const TAWK_WIDGET_ID = "1jj6e46q7";
 
-const TawkToChat = () => {
+const TawkToChat = forwardRef<HTMLDivElement>(function TawkToChat(_, ref) {
   useEffect(() => {
     const script = document.createElement("script");
     script.async = true;
@@ -17,7 +17,7 @@ const TawkToChat = () => {
     };
   }, []);
 
-  return null;
-};
+  return <div ref={ref} />;
+});
 
 export default TawkToChat;
