@@ -131,8 +131,12 @@ const PracticeMode = () => {
       <Header />
       <main className="container max-w-2xl py-8">
         <div className="mb-6">
-          <Link to={`/exams/${exam}/subjects`} className="text-sm text-primary hover:underline">← Back to subjects</Link>
-          <h1 className="mt-2 font-display text-xl font-bold">{subject} — Practice</h1>
+          <ExamBreadcrumb items={[
+            { label: "Exams", href: "/exams" },
+            { label: "Setup", href: `/mock-setup?exam=${exam}` },
+            { label: `${subject} — Practice` },
+          ]} />
+          <h1 className="font-display text-xl font-bold">{subject} — Practice</h1>
           <p className="text-xs text-muted-foreground">
             {exam.toUpperCase()} · {q.topic || "General"}{q.year ? ` · ${q.year}` : ""}
           </p>
