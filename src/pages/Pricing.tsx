@@ -22,6 +22,16 @@ const plans = [
     features: ["Unlimited questions", "Unlimited mock exams", "Full detailed explanations", "Performance analytics", "Weak topic recommendations", "Bookmark & revision mode", "Priority support"],
     limitations: [],
     cta: "Go Premium",
+    popular: false,
+  },
+  {
+    name: "Exam Season",
+    price: "₦3,500",
+    period: "/3 months",
+    description: "Intensive 3-month prep — best value per exam cycle",
+    features: ["Everything in Premium Monthly", "Save ₦1,000 vs monthly", "3-month intensive prep window", "Offline question packs", "Priority support"],
+    limitations: [],
+    cta: "Start Exam Prep",
     popular: true,
   },
   {
