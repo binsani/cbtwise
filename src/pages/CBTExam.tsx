@@ -408,6 +408,9 @@ const CBTExam = () => {
         </div>
       </div>
 
+      {/* Calculator */}
+      {showCalculator && <ExamCalculator onClose={() => setShowCalculator(false)} />}
+
       {/* Submit Modal */}
       {showSubmitModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/50 p-4">
