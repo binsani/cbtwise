@@ -29,11 +29,11 @@ const plans = [
   },
   {
     name: "Annual",
-    price: "₦20,000",
+    price: "₦12,000",
     period: "/year",
     features: [
       "Everything in Premium",
-      "Save ₦10,000/year",
+      "Save ₦6,000/year",
       "Offline question packs",
       "Early access to new features",
     ],
