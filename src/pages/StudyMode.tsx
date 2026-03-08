@@ -253,6 +253,13 @@ const StudyMode = () => {
           </div>
         )}
 
+        {questions.length < totalQuestions && (
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm text-primary">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span>{questions.length} of {totalQuestions} requested questions loaded</span>
+          </div>
+        )}
+
         {/* Question Card */}
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">

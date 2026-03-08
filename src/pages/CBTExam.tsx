@@ -293,6 +293,11 @@ const CBTExam = () => {
               {failedSubjects.length > 0 && (
                 <div className="text-xs text-accent font-medium">⚠ {failedSubjects.join(", ")} unavailable</div>
               )}
+              {questions.length < totalQuestions && (
+                <div className="text-xs text-muted-foreground">
+                  ℹ {questions.length} of {totalQuestions} requested questions loaded
+                </div>
+              )}
             </div>
             <button
               onClick={() => {
