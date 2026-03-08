@@ -36,7 +36,6 @@ const PracticeMode = () => {
   const [bookmarked, setBookmarked] = useState<Set<number>>(new Set());
 
 
-
   useEffect(() => {
     setLoading(true);
     setError(null);
@@ -72,6 +71,42 @@ const PracticeMode = () => {
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subjectsParam, exam, totalQuestions]);
+
+  // Keyboard shortcuts: Arrow keys navigate, A-E/1-5 select options
+  useEffect(() => {
+    if (questions.length === 0) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      const isAnswered = selected[current] !== undefined;
+      switch (e.key) {
+        case "ArrowRight": case "ArrowDown":
+          e.preventDefault();
+          if (current < questions.length - 1) { setCurrent(current + 1); setShowExplanation(false); }
+          break;
+        case "ArrowLeft": case "ArrowUp":
+          e.preventDefault();
+          if (current > 0) { setCurrent(current - 1); setShowExplanation(selected[current - 1] !== undefined); }
+          break;
+        case "a": case "A": case "1":
+          if (!isAnswered && questions[current]?.options.length > 0) { setSelected((s) => ({ ...s, [current]: 0 })); setShowExplanation(true); }
+          break;
+        case "b": case "B": case "2":
+          if (!isAnswered && questions[current]?.options.length > 1) { setSelected((s) => ({ ...s, [current]: 1 })); setShowExplanation(true); }
+          break;
+        case "c": case "C": case "3":
+          if (!isAnswered && questions[current]?.options.length > 2) { setSelected((s) => ({ ...s, [current]: 2 })); setShowExplanation(true); }
+          break;
+        case "d": case "D": case "4":
+          if (!isAnswered && questions[current]?.options.length > 3) { setSelected((s) => ({ ...s, [current]: 3 })); setShowExplanation(true); }
+          break;
+        case "e": case "E": case "5":
+          if (!isAnswered && questions[current]?.options.length > 4) { setSelected((s) => ({ ...s, [current]: 4 })); setShowExplanation(true); }
+          break;
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [current, questions, selected]);
 
   if (gate.loading || loading) {
     return (
