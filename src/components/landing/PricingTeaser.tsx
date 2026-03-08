@@ -14,7 +14,7 @@ const plans = [
   },
   {
     name: "Premium",
-    price: "₦2,500",
+    price: "₦1,500",
     period: "/month",
     features: [
       "Unlimited questions",
