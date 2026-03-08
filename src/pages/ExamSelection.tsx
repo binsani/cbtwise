@@ -61,8 +61,8 @@ const ExamSelection = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.4, delay: i * 0.1 }}
             >
-              <Link
-                to={`/exams/${exam.slug}/subjects`}
+                <Link
+                to={`/mock-setup?exam=${exam.slug}`}
                 className="group flex flex-col sm:flex-row items-start sm:items-center gap-4 rounded-2xl border border-border bg-card p-6 transition-all hover:shadow-lg hover:border-primary/30"
               >
                 <div className={`h-3 w-3 sm:h-4 sm:w-4 rounded-full ${exam.color ? `bg-${exam.color}` : "bg-primary"} shrink-0`} />
