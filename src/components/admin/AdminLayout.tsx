@@ -23,6 +23,7 @@ import {
   Flag,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import AdminNotificationBell from "./AdminNotificationBell";
 
 const navItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
