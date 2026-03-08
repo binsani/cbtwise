@@ -23,7 +23,11 @@ serve(async (req) => {
       );
     }
 
-    // Map friendly subject names to ALOC API subject slugs
+    if (!alocApiKey) {
+      return new Response(
+        JSON.stringify({ error: "server_config_error", message: "Question provider key is missing." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     const subjectMap: Record<string, string> = {
       "english language": "english",
       "english": "english",
