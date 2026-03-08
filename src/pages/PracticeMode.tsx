@@ -12,7 +12,12 @@ import UpgradeGate from "@/components/UpgradeGate";
 const PracticeMode = () => {
   const [searchParams] = useSearchParams();
   const exam = searchParams.get("exam") || "utme";
-  const subject = searchParams.get("subject") || "Biology";
+  const subjectsParam = searchParams.get("subjects") || searchParams.get("subject") || "Biology";
+  const subjectList = subjectsParam.split(",").map((s) => s.trim()).filter(Boolean);
+  const subject = subjectList[0]; // display name
+  const totalQuestions = Math.max(Number(searchParams.get("questions")) || 10, 5);
+  const shuffleQ = searchParams.get("shuffleQ") !== "false";
+  const shuffleO = searchParams.get("shuffleO") !== "false";
   const gate = useSubscriptionGate();
 
   const [questions, setQuestions] = useState<Question[]>([]);
