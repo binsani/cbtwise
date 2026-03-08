@@ -39,7 +39,7 @@ const PracticeMode = () => {
       .finally(() => setLoading(false));
   }, [subject, exam]);
 
-  if (loading) {
+  if (gate.loading || loading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -49,6 +49,18 @@ const PracticeMode = () => {
         </main>
         <Footer />
       </div>
+    );
+  }
+
+  if (!gate.canStartPractice) {
+    return (
+      <UpgradeGate
+        title="Daily Question Limit Reached"
+        message={`Free users can practice ${gate.dailyQuestionsLimit} questions per day. Upgrade to Premium for unlimited access.`}
+        used={gate.dailyQuestionsUsed}
+        limit={gate.dailyQuestionsLimit}
+        unit="Questions"
+      />
     );
   }
 
