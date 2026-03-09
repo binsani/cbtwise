@@ -151,10 +151,7 @@ const AdminPurchaseCodes = () => {
     <AdminLayout title="Purchase Codes" description="Generate and manage purchase codes for premium access">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Purchase Codes</h1>
-            <p className="text-muted-foreground">Generate and manage purchase codes for premium access</p>
-          </div>
+          <div />
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button>
