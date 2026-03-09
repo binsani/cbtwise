@@ -133,6 +133,9 @@ export type Database = {
       }
       purchase_codes: {
         Row: {
+          assigned_email: string | null
+          assigned_name: string | null
+          assigned_password: string | null
           code: string
           created_at: string
           created_by: string
@@ -144,6 +147,9 @@ export type Database = {
           used_by: string | null
         }
         Insert: {
+          assigned_email?: string | null
+          assigned_name?: string | null
+          assigned_password?: string | null
           code: string
           created_at?: string
           created_by: string
@@ -155,6 +161,9 @@ export type Database = {
           used_by?: string | null
         }
         Update: {
+          assigned_email?: string | null
+          assigned_name?: string | null
+          assigned_password?: string | null
           code?: string
           created_at?: string
           created_by?: string
