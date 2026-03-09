@@ -16,6 +16,14 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  // Purchase code states
+  const [purchaseCode, setPurchaseCode] = useState("");
+  const [codeName, setCodeName] = useState("");
+  const [codeEmail, setCodeEmail] = useState("");
+  const [codePassword, setCodePassword] = useState("");
+  const [codeLoading, setCodeLoading] = useState(false);
+  
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
@@ -29,6 +37,42 @@ const Login = () => {
     } else {
       toast.success("Welcome back!");
       navigate("/dashboard");
+    }
+  };
+
+  const handleCodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCodeLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('redeem-purchase-code', {
+        body: {
+          code: purchaseCode.toUpperCase(),
+          email: codeEmail,
+          password: codePassword,
+          fullName: codeName,
+        },
+      });
+
+      setCodeLoading(false);
+
+      if (error) throw error;
+
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      toast.success(data?.message || "Account created successfully!");
+      
+      // Sign in the user
+      const { error: signInError } = await signIn(codeEmail, codePassword);
+      if (!signInError) {
+        navigate("/dashboard");
+      }
+    } catch (error: any) {
+      setCodeLoading(false);
+      toast.error(error.message || "Failed to redeem purchase code");
     }
   };
 
