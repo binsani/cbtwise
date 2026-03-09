@@ -40,6 +40,7 @@ import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminMessages from "./pages/admin/AdminMessages";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminNotifications from "./pages/admin/AdminNotifications";
+import AdminPurchaseCodes from "./pages/admin/AdminPurchaseCodes";
 
 const queryClient = new QueryClient();
 
