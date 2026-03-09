@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Plus, Copy, Check, X } from "lucide-react";
+import { Loader2, Plus, Copy, Check, X, Download } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type PurchaseCode = Tables<"purchase_codes">;
@@ -55,6 +55,46 @@ const AdminPurchaseCodes = () => {
       )
       .join("-");
     return `CBT-${code}`;
+  };
+
+  const escapeCsvValue = (value: string | number | null) => {
+    const stringValue = value == null ? "" : String(value);
+    return `"${stringValue.replace(/"/g, '""')}"`;
+  };
+
+  const handleDownloadCsv = () => {
+    if (codes.length === 0) {
+      toast.error("No purchase codes to export");
+      return;
+    }
+
+    const headers = ["Code", "Duration Days", "Status", "Created At", "Used At", "Used By", "Notes"];
+
+    const rows = codes.map((code) => [
+      escapeCsvValue(code.code),
+      escapeCsvValue(code.duration_days),
+      escapeCsvValue(code.status),
+      escapeCsvValue(code.created_at),
+      escapeCsvValue(code.used_at),
+      escapeCsvValue(code.used_by),
+      escapeCsvValue(code.notes),
+    ]);
+
+    const csvContent = [headers.map(escapeCsvValue).join(","), ...rows.map((row) => row.join(","))].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const datePart = new Date().toISOString().slice(0, 10);
+
+    link.href = url;
+    link.download = `purchase-codes-${datePart}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success("Purchase codes exported as CSV");
   };
 
   const handleGenerateCodes = async () => {
@@ -152,67 +192,73 @@ const AdminPurchaseCodes = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div />
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Generate Codes
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Generate Purchase Codes</DialogTitle>
-                <DialogDescription>
-                  Create new purchase codes for students to activate premium access
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="quantity">Quantity</Label>
-                  <Input
-                    id="quantity"
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={quantity}
-                    onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                  />
-                  <p className="mt-1 text-xs text-muted-foreground">Maximum 100 codes per batch</p>
-                </div>
-                <div>
-                  <Label htmlFor="duration">Duration (Days)</Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    min="1"
-                    value={duration}
-                    onChange={(e) => setDuration(parseInt(e.target.value) || 30)}
-                  />
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    How many days of premium access (e.g., 30, 90, 365)
-                  </p>
-                </div>
-                <div>
-                  <Label htmlFor="notes">Notes (Optional)</Label>
-                  <Input
-                    id="notes"
-                    placeholder="e.g., Batch for bank transfer payments"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>
-                  Cancel
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleDownloadCsv} disabled={loading || codes.length === 0}>
+              <Download className="mr-2 h-4 w-4" />
+              Download as CSV
+            </Button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Generate Codes
                 </Button>
-                <Button onClick={handleGenerateCodes} disabled={generatingCodes}>
-                  {generatingCodes && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Generate
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Generate Purchase Codes</DialogTitle>
+                  <DialogDescription>
+                    Create new purchase codes for students to activate premium access
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="quantity">Quantity</Label>
+                    <Input
+                      id="quantity"
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={quantity}
+                      onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">Maximum 100 codes per batch</p>
+                  </div>
+                  <div>
+                    <Label htmlFor="duration">Duration (Days)</Label>
+                    <Input
+                      id="duration"
+                      type="number"
+                      min="1"
+                      value={duration}
+                      onChange={(e) => setDuration(parseInt(e.target.value) || 30)}
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      How many days of premium access (e.g., 30, 90, 365)
+                    </p>
+                  </div>
+                  <div>
+                    <Label htmlFor="notes">Notes (Optional)</Label>
+                    <Input
+                      id="notes"
+                      placeholder="e.g., Batch for bank transfer payments"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleGenerateCodes} disabled={generatingCodes}>
+                    {generatingCodes && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Generate
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-4">
