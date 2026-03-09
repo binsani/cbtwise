@@ -148,7 +148,7 @@ const AdminPurchaseCodes = () => {
   };
 
   return (
-    <AdminLayout>
+    <AdminLayout title="Purchase Codes" description="Generate and manage purchase codes for premium access">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
