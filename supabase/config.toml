@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.generate-questions]
 verify_jwt = false
+
+[functions.redeem-purchase-code]
+verify_jwt = false
