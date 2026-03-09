@@ -5,55 +5,40 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface RedemptionRequest {
-  code: string;
-  email: string;
-  password: string;
-  fullName: string;
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { code, email, password, fullName }: RedemptionRequest = await req.json();
+    const { code }: { code: string } = await req.json();
 
-    // Validate inputs
-    if (!code || !email || !password || !fullName) {
+    if (!code) {
       return new Response(
-        JSON.stringify({ error: 'All fields are required' }),
+        JSON.stringify({ error: 'Purchase code is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Validate code format (CBT-XXXX-XXXX-XXXX)
     const codeRegex = /^CBT-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
-    if (!codeRegex.test(code)) {
+    if (!codeRegex.test(code.toUpperCase())) {
       return new Response(
-        JSON.stringify({ error: 'Invalid code format. Expected format: CBT-XXXX-XXXX-XXXX' }),
+        JSON.stringify({ error: 'Invalid code format. Expected: CBT-XXXX-XXXX-XXXX' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Create Supabase client with service role
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
+      { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // Check if code exists and is active
+    // Fetch the purchase code with assigned credentials
     const { data: purchaseCode, error: codeError } = await supabaseAdmin
       .from('purchase_codes')
       .select('*')
-      .eq('code', code)
+      .eq('code', code.toUpperCase())
       .single();
 
     if (codeError || !purchaseCode) {
@@ -70,25 +55,35 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if email already exists
-    const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers();
-    const emailExists = existingUser.users.some(u => u.email === email);
-    
-    if (emailExists) {
+    // Ensure the code has pre-assigned credentials
+    if (!purchaseCode.assigned_email || !purchaseCode.assigned_password) {
       return new Response(
-        JSON.stringify({ error: 'An account with this email already exists. Please login instead.' }),
+        JSON.stringify({ error: 'This code does not have assigned credentials. Please contact admin.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Create new user account with auto-confirmed email
+    const email = purchaseCode.assigned_email;
+    const password = purchaseCode.assigned_password;
+    const fullName = purchaseCode.assigned_name || 'Student';
+
+    // Check if user with this email already exists (code re-use attempt)
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+    const emailExists = existingUsers.users.some((u) => u.email === email);
+
+    if (emailExists) {
+      return new Response(
+        JSON.stringify({ error: 'This code has already been activated. Please log in with your assigned credentials.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create the user account with pre-assigned credentials
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // Auto-confirm email
-      user_metadata: {
-        full_name: fullName,
-      },
+      email_confirm: true,
+      user_metadata: { full_name: fullName },
     });
 
     if (authError || !authData.user) {
@@ -99,7 +94,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create subscription for the user
+    // Create subscription
     const endsAt = new Date();
     endsAt.setDate(endsAt.getDate() + purchaseCode.duration_days);
 
@@ -116,7 +111,6 @@ Deno.serve(async (req) => {
 
     if (subError) {
       console.error('Subscription error:', subError);
-      // Rollback: delete the created user
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       return new Response(
         JSON.stringify({ error: 'Failed to activate subscription' }),
@@ -125,41 +119,17 @@ Deno.serve(async (req) => {
     }
 
     // Mark code as used
-    const { error: updateError } = await supabaseAdmin
+    await supabaseAdmin
       .from('purchase_codes')
-      .update({
-        status: 'used',
-        used_by: authData.user.id,
-        used_at: new Date().toISOString(),
-      })
+      .update({ status: 'used', used_by: authData.user.id, used_at: new Date().toISOString() })
       .eq('id', purchaseCode.id);
-
-    if (updateError) {
-      console.error('Code update error:', updateError);
-    }
-
-    // Create session for the user
-    const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'magiclink',
-      email: email,
-    });
-
-    if (sessionError) {
-      return new Response(
-        JSON.stringify({ 
-          success: true,
-          message: 'Account created successfully. Please log in with your credentials.',
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Account created and premium access activated!',
-        user: authData.user,
-        session: sessionData,
+        message: 'Account activated successfully!',
+        email,
+        password,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

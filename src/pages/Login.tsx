@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2 } from "lucide-react";
+import { Loader2, Copy, Check } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,14 +16,13 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   // Purchase code states
   const [purchaseCode, setPurchaseCode] = useState("");
-  const [codeName, setCodeName] = useState("");
-  const [codeEmail, setCodeEmail] = useState("");
-  const [codePassword, setCodePassword] = useState("");
   const [codeLoading, setCodeLoading] = useState(false);
-  
+  const [activatedCredentials, setActivatedCredentials] = useState<{ email: string; password: string } | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
@@ -40,21 +39,24 @@ const Login = () => {
     }
   };
 
+  const copyToClipboard = (text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
   const handleCodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!purchaseCode.trim()) {
+      toast.error("Please enter your purchase code");
+      return;
+    }
     setCodeLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('redeem-purchase-code', {
-        body: {
-          code: purchaseCode.toUpperCase(),
-          email: codeEmail,
-          password: codePassword,
-          fullName: codeName,
-        },
+      const { data, error } = await supabase.functions.invoke("redeem-purchase-code", {
+        body: { code: purchaseCode.toUpperCase().trim() },
       });
-
-      setCodeLoading(false);
 
       if (error) throw error;
 
@@ -63,16 +65,21 @@ const Login = () => {
         return;
       }
 
-      toast.success(data?.message || "Account created successfully!");
-      
-      // Sign in the user
-      const { error: signInError } = await signIn(codeEmail, codePassword);
+      // Show credentials and auto-sign in
+      const { email: assignedEmail, password: assignedPassword } = data;
+      setActivatedCredentials({ email: assignedEmail, password: assignedPassword });
+      toast.success("Account activated! Signing you in...");
+
+      const { error: signInError } = await signIn(assignedEmail, assignedPassword);
       if (!signInError) {
         navigate("/dashboard");
+      } else {
+        toast.error("Account created but auto-login failed. Use the credentials below to log in.");
       }
     } catch (error: any) {
-      setCodeLoading(false);
       toast.error(error.message || "Failed to redeem purchase code");
+    } finally {
+      setCodeLoading(false);
     }
   };
 
@@ -93,6 +100,7 @@ const Login = () => {
               <TabsTrigger value="code">Purchase Code</TabsTrigger>
             </TabsList>
 
+            {/* Standard login */}
             <TabsContent value="login">
               <form className="space-y-4" onSubmit={handleSubmit}>
                 <div>
@@ -111,49 +119,75 @@ const Login = () => {
                   Log in
                 </Button>
               </form>
-
               <p className="mt-6 text-center text-sm text-muted-foreground">
                 Don't have an account?{" "}
                 <Link to="/signup" className="font-semibold text-primary hover:underline">Sign up</Link>
               </p>
             </TabsContent>
 
+            {/* Purchase code redemption */}
             <TabsContent value="code">
-              <form className="space-y-4" onSubmit={handleCodeSubmit}>
-                <div>
-                  <Label htmlFor="purchaseCode">Purchase Code</Label>
-                  <Input 
-                    id="purchaseCode" 
-                    type="text" 
-                    placeholder="CBT-XXXX-XXXX-XXXX" 
-                    value={purchaseCode} 
-                    onChange={(e) => setPurchaseCode(e.target.value.toUpperCase())} 
-                    required 
-                  />
-                  <p className="mt-1 text-xs text-muted-foreground">Enter the purchase code provided by admin</p>
+              {activatedCredentials ? (
+                <div className="space-y-4 rounded-lg border border-border bg-muted/40 p-4">
+                  <p className="text-sm font-medium">Your login credentials have been created:</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between rounded-md bg-background px-3 py-2">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Email</p>
+                        <p className="font-mono text-sm">{activatedCredentials.email}</p>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyToClipboard(activatedCredentials.email, "email")}>
+                        {copiedField === "email" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between rounded-md bg-background px-3 py-2">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Password</p>
+                        <p className="font-mono text-sm">{activatedCredentials.password}</p>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyToClipboard(activatedCredentials.password, "password")}>
+                        {copiedField === "password" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Save these credentials — you'll need them to log in next time.</p>
+                  <Button className="w-full" onClick={() => navigate("/dashboard")}>Go to Dashboard</Button>
                 </div>
-                <div>
-                  <Label htmlFor="codeName">Full Name</Label>
-                  <Input id="codeName" type="text" placeholder="John Doe" value={codeName} onChange={(e) => setCodeName(e.target.value)} required />
-                </div>
-                <div>
-                  <Label htmlFor="codeEmail">Email</Label>
-                  <Input id="codeEmail" type="email" placeholder="you@example.com" value={codeEmail} onChange={(e) => setCodeEmail(e.target.value)} required />
-                </div>
-                <div>
-                  <Label htmlFor="codePassword">Password</Label>
-                  <Input id="codePassword" type="password" placeholder="••••••••" value={codePassword} onChange={(e) => setCodePassword(e.target.value)} required />
-                  <p className="mt-1 text-xs text-muted-foreground">Choose a password for your new account</p>
-                </div>
-                <Button className="w-full" type="submit" disabled={codeLoading}>
-                  {codeLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Activate & Login
-                </Button>
-              </form>
-
+              ) : (
+                <form className="space-y-4" onSubmit={handleCodeSubmit}>
+                  <div>
+                    <Label htmlFor="purchaseCode">Purchase Code</Label>
+                    <Input
+                      id="purchaseCode"
+                      type="text"
+                      placeholder="CBT-XXXX-XXXX-XXXX"
+                      value={purchaseCode}
+                      onChange={(e) => setPurchaseCode(e.target.value.toUpperCase())}
+                      className="font-mono tracking-widest"
+                      required
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Enter the purchase code provided by your admin. Your login credentials are already assigned to the code.
+                    </p>
+                  </div>
+                  <Button className="w-full" type="submit" disabled={codeLoading}>
+                    {codeLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Activate & Login
+                  </Button>
+                </form>
+              )}
               <p className="mt-6 text-center text-sm text-muted-foreground">
-                Already have an account?{" "}
-                <Link to="/login" className="font-semibold text-primary hover:underline">Log in</Link>
+                Already activated?{" "}
+                <button
+                  type="button"
+                  className="font-semibold text-primary hover:underline"
+                  onClick={() => {
+                    const tab = document.querySelector('[data-value="login"]') as HTMLElement;
+                    tab?.click();
+                  }}
+                >
+                  Log in here
+                </button>
               </p>
             </TabsContent>
           </Tabs>
