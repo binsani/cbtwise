@@ -22,6 +22,7 @@ import {
   ArrowLeft,
   Flag,
   Bell,
+  KeyRound,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import AdminNotificationBell from "./AdminNotificationBell";
@@ -35,6 +36,7 @@ const navItems = [
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
   { title: "Messages", url: "/admin/messages", icon: MessageSquare },
   { title: "Reports", url: "/admin/reports", icon: Flag },
+  { title: "Purchase Codes", url: "/admin/purchase-codes", icon: KeyRound },
   { title: "Notifications", url: "/admin/notifications", icon: Bell },
 ];
 

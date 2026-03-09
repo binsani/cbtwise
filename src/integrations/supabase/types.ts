@@ -131,6 +131,42 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string
+          duration_days: number
+          id: string
+          notes: string | null
+          status: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by: string
+          duration_days: number
+          id?: string
+          notes?: string | null
+          status?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string
+          duration_days?: number
+          id?: string
+          notes?: string | null
+          status?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
       question_reports: {
         Row: {
           admin_notes: string | null
