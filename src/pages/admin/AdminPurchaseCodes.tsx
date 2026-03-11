@@ -297,6 +297,24 @@ const AdminPurchaseCodes = () => {
                   </div>
                   <div>
                     <Label htmlFor="duration">Duration (Days)</Label>
+                    <div className="flex items-center gap-2 mt-1 mb-2">
+                      {[
+                        { label: "30 days", value: 30 },
+                        { label: "90 days", value: 90 },
+                        { label: "180 days", value: 180 },
+                        { label: "1 year", value: 365 },
+                      ].map((preset) => (
+                        <Button
+                          key={preset.value}
+                          type="button"
+                          variant={duration === preset.value ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setDuration(preset.value)}
+                        >
+                          {preset.label}
+                        </Button>
+                      ))}
+                    </div>
                     <Input
                       id="duration"
                       type="number"
@@ -305,7 +323,7 @@ const AdminPurchaseCodes = () => {
                       onChange={(e) => setDuration(parseInt(e.target.value) || 30)}
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
-                      How many days of premium access (e.g., 30, 90, 365)
+                      Select a preset or enter a custom number of days
                     </p>
                   </div>
                   <div>
