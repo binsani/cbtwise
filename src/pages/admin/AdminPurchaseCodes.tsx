@@ -252,7 +252,7 @@ const AdminPurchaseCodes = () => {
               <Download className="mr-2 h-4 w-4" />
               Download as CSV
             </Button>
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setShowConfirm(false); }}>
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
