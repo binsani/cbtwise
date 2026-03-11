@@ -412,9 +412,6 @@ const AdminPurchaseCodes = () => {
                       </Button>
                     </DialogFooter>
                   </>
-                )}
-                  </Button>
-                </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>
