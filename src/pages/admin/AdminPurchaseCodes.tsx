@@ -46,6 +46,7 @@ const AdminPurchaseCodes = () => {
   const [loading, setLoading] = useState(true);
   const [generatingCodes, setGeneratingCodes] = useState(false);
   const [open, setOpen] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());
 
@@ -176,6 +177,7 @@ const AdminPurchaseCodes = () => {
       } else {
         toast.success(`Generated ${quantity} purchase code${quantity > 1 ? "s" : ""}`);
         setOpen(false);
+        setShowConfirm(false);
         setStudentName("");
         setQuantity(1);
         setDuration(30);
@@ -251,7 +253,7 @@ const AdminPurchaseCodes = () => {
               <Download className="mr-2 h-4 w-4" />
               Download as CSV
             </Button>
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setShowConfirm(false); }}>
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
@@ -259,92 +261,159 @@ const AdminPurchaseCodes = () => {
                 </Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Generate Purchase Code</DialogTitle>
-                  <DialogDescription>
-                    Enter the student's name — email and password will be auto-generated
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="studentName">Student Full Name</Label>
-                    <Input
-                      id="studentName"
-                      type="text"
-                      placeholder="e.g. John Doe"
-                      value={studentName}
-                      onChange={(e) => setStudentName(e.target.value)}
-                    />
-                    {previewEmail && (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Email will be: <span className="font-mono font-medium text-foreground">{previewEmail}</span>
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="quantity">Quantity</Label>
-                    <Input
-                      id="quantity"
-                      type="number"
-                      min="1"
-                      max="100"
-                      value={quantity}
-                      onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                    />
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {quantity > 1 ? "Bulk mode: sequential emails will be generated" : "Maximum 100 codes per batch"}
-                    </p>
-                  </div>
-                  <div>
-                    <Label htmlFor="duration">Duration (Days)</Label>
-                    <div className="flex items-center gap-2 mt-1 mb-2">
-                      {[
-                        { label: "30 days", value: 30 },
-                        { label: "90 days", value: 90 },
-                        { label: "180 days", value: 180 },
-                        { label: "1 year", value: 365 },
-                      ].map((preset) => (
-                        <Button
-                          key={preset.value}
-                          type="button"
-                          variant={duration === preset.value ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setDuration(preset.value)}
-                        >
-                          {preset.label}
-                        </Button>
-                      ))}
+                {!showConfirm ? (
+                  <>
+                    <DialogHeader>
+                      <DialogTitle>Generate Purchase Code</DialogTitle>
+                      <DialogDescription>
+                        Enter the student's name — email and password will be auto-generated
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="studentName">Student Full Name</Label>
+                        <Input
+                          id="studentName"
+                          type="text"
+                          placeholder="e.g. John Doe"
+                          value={studentName}
+                          onChange={(e) => setStudentName(e.target.value)}
+                        />
+                        {previewEmail && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Email will be: <span className="font-mono font-medium text-foreground">{previewEmail}</span>
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="quantity">Quantity</Label>
+                        <Input
+                          id="quantity"
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={quantity}
+                          onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {quantity > 1 ? "Bulk mode: sequential emails will be generated" : "Maximum 100 codes per batch"}
+                        </p>
+                      </div>
+                      <div>
+                        <Label htmlFor="duration">Duration (Days)</Label>
+                        <div className="flex items-center gap-2 mt-1 mb-2">
+                          {[
+                            { label: "30 days", value: 30 },
+                            { label: "90 days", value: 90 },
+                            { label: "180 days", value: 180 },
+                            { label: "1 year", value: 365 },
+                          ].map((preset) => (
+                            <Button
+                              key={preset.value}
+                              type="button"
+                              variant={duration === preset.value ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setDuration(preset.value)}
+                            >
+                              {preset.label}
+                            </Button>
+                          ))}
+                        </div>
+                        <Input
+                          id="duration"
+                          type="number"
+                          min="1"
+                          value={duration}
+                          onChange={(e) => setDuration(parseInt(e.target.value) || 30)}
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Select a preset or enter a custom number of days
+                        </p>
+                      </div>
+                      <div>
+                        <Label htmlFor="notes">Notes (Optional)</Label>
+                        <Input
+                          id="notes"
+                          placeholder="e.g. Batch for bank transfer payments"
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                        />
+                      </div>
                     </div>
-                    <Input
-                      id="duration"
-                      type="number"
-                      min="1"
-                      value={duration}
-                      onChange={(e) => setDuration(parseInt(e.target.value) || 30)}
-                    />
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Select a preset or enter a custom number of days
-                    </p>
-                  </div>
-                  <div>
-                    <Label htmlFor="notes">Notes (Optional)</Label>
-                    <Input
-                      id="notes"
-                      placeholder="e.g. Batch for bank transfer payments"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleGenerateCodes} disabled={generatingCodes}>
-                    {generatingCodes && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Generate
-                  </Button>
-                </DialogFooter>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          if (!studentName.trim() && quantity === 1) {
+                            toast.error("Please enter the student's full name");
+                            return;
+                          }
+                          if (quantity > 1 && studentName.trim()) {
+                            toast.error("For bulk generation, leave the name empty");
+                            return;
+                          }
+                          if (quantity < 1 || quantity > 100) {
+                            toast.error("Quantity must be between 1 and 100");
+                            return;
+                          }
+                          if (duration < 1) {
+                            toast.error("Duration must be at least 1 day");
+                            return;
+                          }
+                          setShowConfirm(true);
+                        }}
+                      >
+                        Review & Confirm
+                      </Button>
+                    </DialogFooter>
+                  </>
+                ) : (
+                  <>
+                    <DialogHeader>
+                      <DialogTitle>Confirm Purchase Code Generation</DialogTitle>
+                      <DialogDescription>
+                        Please review the details below before generating
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3 rounded-lg border border-border bg-muted/50 p-4">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Student Name</span>
+                        <span className="text-sm font-medium">{studentName.trim() || `Bulk (${quantity} students)`}</span>
+                      </div>
+                      {studentName.trim() && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Email</span>
+                          <span className="text-sm font-mono font-medium">{previewEmail}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Quantity</span>
+                        <span className="text-sm font-medium">{quantity} code{quantity > 1 ? "s" : ""}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Duration</span>
+                        <span className="text-sm font-medium">{duration} day{duration > 1 ? "s" : ""}</span>
+                      </div>
+                      {notes && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Notes</span>
+                          <span className="text-sm font-medium max-w-[200px] text-right">{notes}</span>
+                        </div>
+                      )}
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowConfirm(false)}>
+                        Back
+                      </Button>
+                      <Button onClick={handleGenerateCodes} disabled={generatingCodes}>
+                        {generatingCodes && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Confirm & Generate
+                      </Button>
+                    </DialogFooter>
+                   </>
+                )}
               </DialogContent>
             </Dialog>
           </div>
