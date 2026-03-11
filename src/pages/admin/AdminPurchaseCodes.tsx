@@ -411,7 +411,8 @@ const AdminPurchaseCodes = () => {
                         Confirm & Generate
                       </Button>
                     </DialogFooter>
-                  </>
+                   </>
+                )}
               </DialogContent>
             </Dialog>
           </div>
