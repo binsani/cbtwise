@@ -177,6 +177,7 @@ const AdminPurchaseCodes = () => {
       } else {
         toast.success(`Generated ${quantity} purchase code${quantity > 1 ? "s" : ""}`);
         setOpen(false);
+        setShowConfirm(false);
         setStudentName("");
         setQuantity(1);
         setDuration(30);
