@@ -23,6 +23,7 @@ import {
   Flag,
   Bell,
   KeyRound,
+  DatabaseBackup,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import AdminNotificationBell from "./AdminNotificationBell";
