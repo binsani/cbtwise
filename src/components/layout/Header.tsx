@@ -3,9 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogOut, User, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-
- } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import cbtwiseLogo from "@/assets/cbtwise-logo.png";
 
 const Header = () => {
