@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.redeem-purchase-code]
 verify_jwt = false
+
+[functions.bulk-fetch-aloc]
+verify_jwt = false
