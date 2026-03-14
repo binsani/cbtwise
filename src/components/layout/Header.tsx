@@ -10,8 +10,20 @@ import cbtwiseLogo from "@/assets/cbtwise-logo.png";
 
 const Header = () => {
   const [open, setOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) { setIsAdmin(false); return; }
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle()
+      .then(({ data }) => setIsAdmin(!!data));
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
