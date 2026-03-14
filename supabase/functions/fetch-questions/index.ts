@@ -47,7 +47,6 @@ const supportedSubjects = new Set([
 
 const supportedExamTypes = new Set(["waec", "utme", "neco", "post-utme"]);
 
-// Normalize subject input to a slug used by both local DB and ALOC
 function resolveSubjectSlug(subject: string): string {
   const normalized = subject.toLowerCase().trim().replace(/[_\s]+/g, " ");
   return (
@@ -55,6 +54,18 @@ function resolveSubjectSlug(subject: string): string {
     subjectMap[normalized.replace(/\s+/g, "_")] ||
     normalized.replace(/\s+/g, "")
   );
+}
+
+// Fetch with timeout helper
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    return res;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 serve(async (req) => {
@@ -98,15 +109,14 @@ serve(async (req) => {
       );
     }
 
-    // ── Step 1: Query local database ──
+    // ── Step 1: Query local database with random ordering ──
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     let localQuestions: any[] = [];
+    let localTotalAvailable = 0;
     try {
-      // Find matching subject+exam in local DB
-      // We match subject by slug and exam by slug
       const { data: subjectRows } = await supabase
         .from("subjects")
         .select("id, exam_id, slug")
@@ -120,28 +130,40 @@ serve(async (req) => {
 
       if (subjectRows && examRows && examRows.length > 0) {
         const examId = examRows[0].id;
-        // Find subject that matches slug within this exam
         const matchedSubject = subjectRows.find(
           (s: any) => s.slug === subjectSlug && s.exam_id === examId
         );
 
         if (matchedSubject) {
+          // First get total count for threshold check
+          const { count } = await supabase
+            .from("questions")
+            .select("id", { count: "exact", head: true })
+            .eq("subject_id", matchedSubject.id)
+            .eq("exam_id", examId)
+            .eq("is_active", true);
+
+          localTotalAvailable = count || 0;
+
+          // Fetch more than needed, then shuffle & slice (Supabase doesn't support random order natively)
+          const fetchLimit = Math.min(localTotalAvailable, Math.max(requestedAmount * 3, 200));
           const { data: dbQuestions } = await supabase
             .from("questions")
             .select("id, text, options, correct_index, explanation, topic, year")
             .eq("subject_id", matchedSubject.id)
             .eq("exam_id", examId)
             .eq("is_active", true)
-            .limit(requestedAmount)
-            .order("created_at", { ascending: false }); // We'll shuffle client-side
+            .limit(fetchLimit);
 
           if (dbQuestions && dbQuestions.length > 0) {
-            // Shuffle locally fetched questions
+            // Fisher-Yates shuffle for true randomization
             for (let i = dbQuestions.length - 1; i > 0; i--) {
               const j = Math.floor(Math.random() * (i + 1));
               [dbQuestions[i], dbQuestions[j]] = [dbQuestions[j], dbQuestions[i]];
             }
-            localQuestions = dbQuestions.map((q: any, i: number) => {
+            // Slice to requested amount
+            const sliced = dbQuestions.slice(0, requestedAmount);
+            localQuestions = sliced.map((q: any) => {
               const opts = Array.isArray(q.options) ? q.options : [];
               return {
                 id: q.id,
@@ -158,34 +180,35 @@ serve(async (req) => {
           }
         }
       }
-      console.log(`Local DB: found ${localQuestions.length} questions for ${subjectSlug}/${type}`);
+      console.log(`Local DB: ${localQuestions.length}/${requestedAmount} (${localTotalAvailable} total available) for ${subjectSlug}/${type}`);
     } catch (dbErr) {
       console.error("Local DB query failed, falling back to ALOC:", dbErr);
     }
 
-    // ── Step 2: Calculate shortfall ──
+    // ── Step 2: Check if we need ALOC (skip if local has ≥80%) ──
     const remaining = requestedAmount - localQuestions.length;
+    const coverageRatio = localQuestions.length / requestedAmount;
     let alocQuestions: any[] = [];
 
-    // ── Step 3: ALOC fallback ──
-    if (remaining > 0 && alocApiKey) {
-      console.log(`Need ${remaining} more from ALOC API`);
+    // ── Step 3: ALOC fallback — only if local coverage < 80% ──
+    if (remaining > 0 && coverageRatio < 0.8 && alocApiKey) {
+      console.log(`Local coverage ${Math.round(coverageRatio * 100)}% < 80%, fetching ${remaining} from ALOC`);
       const ALOC_MAX = 40;
       const MAX_RETRIES = 5;
+      const ALOC_TIMEOUT_MS = 3000;
       const allRaw: any[] = [];
       const seenIds = new Set<number>();
 
       for (let attempt = 0; attempt < MAX_RETRIES && allRaw.length < remaining; attempt++) {
         const url = `https://questions.aloc.com.ng/api/v2/m/${ALOC_MAX}?subject=${subjectSlug}&type=${type}`;
         try {
-          const response = await fetch(url, {
+          const response = await fetchWithTimeout(url, {
             headers: { Accept: "application/json", AccessToken: alocApiKey },
-          });
+          }, ALOC_TIMEOUT_MS);
 
           if (!response.ok) {
             console.error(`ALOC error: ${response.status}`);
-            if (allRaw.length > 0) break;
-            if (localQuestions.length > 0) break; // We have local questions, don't fail
+            if (allRaw.length > 0 || localQuestions.length > 0) break;
             continue;
           }
 
@@ -202,8 +225,13 @@ serve(async (req) => {
           console.log(`ALOC attempt ${attempt + 1}: ${newCount} new (total: ${allRaw.length}/${remaining})`);
           if (newCount === 0) break;
         } catch (fetchErr) {
-          console.error("ALOC fetch error:", fetchErr);
-          break;
+          if (fetchErr instanceof DOMException && fetchErr.name === "AbortError") {
+            console.warn(`ALOC timeout after ${ALOC_TIMEOUT_MS}ms on attempt ${attempt + 1}`);
+          } else {
+            console.error("ALOC fetch error:", fetchErr);
+          }
+          // If we have any local questions, stop retrying on timeout
+          if (localQuestions.length > 0) break;
         }
       }
 
@@ -222,14 +250,12 @@ serve(async (req) => {
           year: q.examYear || null,
           section: q.section || "",
           _source: "aloc",
-          _raw: q, // keep raw for caching
         };
       });
 
-      // ── Step 3b: Auto-cache ALOC questions into local DB ──
+      // ── Auto-cache ALOC questions into local DB ──
       if (alocQuestions.length > 0) {
         try {
-          // Find or skip caching if we can't resolve subject/exam IDs
           const { data: examRows } = await supabase
             .from("exams")
             .select("id")
@@ -264,8 +290,6 @@ serve(async (req) => {
                 }));
 
               if (toInsert.length > 0) {
-                // Use text+subject_id as a natural dedup key — skip conflicts
-                // We insert in small batches; duplicates just fail silently
                 const BATCH = 50;
                 for (let b = 0; b < toInsert.length; b += BATCH) {
                   const batch = toInsert.slice(b, b + BATCH);
@@ -273,7 +297,6 @@ serve(async (req) => {
                     .from("questions")
                     .insert(batch);
                   if (insertErr) {
-                    // Likely duplicate or constraint error — that's OK
                     console.log(`Cache insert batch warning: ${insertErr.message}`);
                   }
                 }
@@ -285,14 +308,15 @@ serve(async (req) => {
           console.error("Auto-cache failed (non-fatal):", cacheErr);
         }
       }
+    } else if (remaining > 0 && coverageRatio >= 0.8) {
+      console.log(`Local coverage ${Math.round(coverageRatio * 100)}% ≥ 80%, skipping ALOC`);
     } else if (remaining > 0 && !alocApiKey) {
       console.warn("ALOC API key missing, skipping fallback");
     }
 
     // ── Step 4: Merge & return ──
-    // Strip internal fields before returning
     const merged = [...localQuestions, ...alocQuestions].map(
-      ({ _source, _raw, ...rest }) => rest
+      ({ _source, ...rest }) => rest
     );
 
     if (merged.length === 0) {
