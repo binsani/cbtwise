@@ -41,6 +41,7 @@ import AdminMessages from "./pages/admin/AdminMessages";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminPurchaseCodes from "./pages/admin/AdminPurchaseCodes";
+import AdminBulkSeeder from "./pages/admin/AdminBulkSeeder";
 
 const queryClient = new QueryClient();
 
@@ -85,6 +86,7 @@ const App = () => (
             <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
             <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
             <Route path="/admin/purchase-codes" element={<AdminRoute><AdminPurchaseCodes /></AdminRoute>} />
+            <Route path="/admin/bulk-seeder" element={<AdminRoute><AdminBulkSeeder /></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

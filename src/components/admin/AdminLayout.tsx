@@ -23,6 +23,7 @@ import {
   Flag,
   Bell,
   KeyRound,
+  DatabaseBackup,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import AdminNotificationBell from "./AdminNotificationBell";
@@ -37,6 +38,7 @@ const navItems = [
   { title: "Messages", url: "/admin/messages", icon: MessageSquare },
   { title: "Reports", url: "/admin/reports", icon: Flag },
   { title: "Purchase Codes", url: "/admin/purchase-codes", icon: KeyRound },
+  { title: "Bulk Seeder", url: "/admin/bulk-seeder", icon: DatabaseBackup },
   { title: "Notifications", url: "/admin/notifications", icon: Bell },
 ];
 
