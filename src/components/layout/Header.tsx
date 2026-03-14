@@ -113,6 +113,11 @@ const Header = () => {
             <hr className="my-2 border-border" />
             {user ? (
               <>
+                {isAdmin && (
+                  <Button variant="ghost" asChild className="justify-start">
+                    <Link to="/admin" onClick={() => setOpen(false)}><Shield className="mr-1 h-4 w-4" />Admin</Link>
+                  </Button>
+                )}
                 <Button variant="ghost" asChild className="justify-start">
                   <Link to="/dashboard" onClick={() => setOpen(false)}>Dashboard</Link>
                 </Button>
