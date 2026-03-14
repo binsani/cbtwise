@@ -58,14 +58,8 @@ const AdminBulkSeeder = () => {
   };
 
   return (
-    <AdminLayout>
+    <AdminLayout title="Bulk Question Seeder" description="Fetch questions from ALOC API for all subjects and cache them locally.">
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Bulk Question Seeder</h1>
-          <p className="text-muted-foreground">
-            Fetch questions from ALOC API for all subjects and cache them locally. Once your local bank is large enough, ALOC will no longer be needed.
-          </p>
-        </div>
 
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
           <div className="flex flex-wrap items-end gap-4">
