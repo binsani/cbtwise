@@ -62,6 +62,11 @@ const Header = () => {
         <div className="hidden items-center gap-3 md:flex">
           {loading ? null : user ? (
             <>
+              {isAdmin && (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/admin"><Shield className="mr-1 h-4 w-4" />Admin</Link>
+                </Button>
+              )}
               <Button variant="ghost" size="sm" asChild>
                 <Link to="/dashboard">Dashboard</Link>
               </Button>
