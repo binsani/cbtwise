@@ -1,14 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogOut, User } from "lucide-react";
+import { Menu, X, LogOut, User, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import cbtwiseLogo from "@/assets/cbtwise-logo.png";
 
 const Header = () => {
   const [open, setOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) { setIsAdmin(false); return; }
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle()
+      .then(({ data }) => setIsAdmin(!!data));
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -49,6 +62,11 @@ const Header = () => {
         <div className="hidden items-center gap-3 md:flex">
           {loading ? null : user ? (
             <>
+              {isAdmin && (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/admin"><Shield className="mr-1 h-4 w-4" />Admin</Link>
+                </Button>
+              )}
               <Button variant="ghost" size="sm" asChild>
                 <Link to="/dashboard">Dashboard</Link>
               </Button>
@@ -95,6 +113,11 @@ const Header = () => {
             <hr className="my-2 border-border" />
             {user ? (
               <>
+                {isAdmin && (
+                  <Button variant="ghost" asChild className="justify-start">
+                    <Link to="/admin" onClick={() => setOpen(false)}><Shield className="mr-1 h-4 w-4" />Admin</Link>
+                  </Button>
+                )}
                 <Button variant="ghost" asChild className="justify-start">
                   <Link to="/dashboard" onClick={() => setOpen(false)}>Dashboard</Link>
                 </Button>
