@@ -45,6 +45,34 @@ const Login = () => {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  const extractFunctionErrorMessage = async (error: unknown) => {
+    const fallback = "Failed to redeem purchase code";
+
+    if (!error || typeof error !== "object") return fallback;
+
+    const maybeError = error as { message?: string; context?: Response };
+    const response = maybeError.context;
+
+    if (response) {
+      try {
+        const raw = await response.text();
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw) as { error?: string; message?: string };
+            if (parsed.error) return parsed.error;
+            if (parsed.message) return parsed.message;
+          } catch {
+            return raw;
+          }
+        }
+      } catch {
+        // no-op
+      }
+    }
+
+    return maybeError.message || fallback;
+  };
+
   const handleCodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!purchaseCode.trim()) {
@@ -58,7 +86,10 @@ const Login = () => {
         body: { code: purchaseCode.toUpperCase().trim() },
       });
 
-      if (error) throw error;
+      if (error) {
+        const message = await extractFunctionErrorMessage(error);
+        throw new Error(message);
+      }
 
       if (data?.error) {
         toast.error(data.error);
@@ -76,8 +107,9 @@ const Login = () => {
       } else {
         toast.error("Account created but auto-login failed. Use the credentials below to log in.");
       }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to redeem purchase code");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : await extractFunctionErrorMessage(error);
+      toast.error(message || "Failed to redeem purchase code");
     } finally {
       setCodeLoading(false);
     }
