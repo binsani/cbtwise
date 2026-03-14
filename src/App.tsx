@@ -41,6 +41,7 @@ import AdminMessages from "./pages/admin/AdminMessages";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminPurchaseCodes from "./pages/admin/AdminPurchaseCodes";
+import AdminBulkSeeder from "./pages/admin/AdminBulkSeeder";
 
 const queryClient = new QueryClient();
 
