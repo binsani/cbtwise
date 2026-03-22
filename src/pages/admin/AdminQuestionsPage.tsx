@@ -283,8 +283,13 @@ const AdminQuestionsPage = () => {
     e.target.value = "";
   };
 
-  const validateRows = (rows: CsvRow[], existingTexts?: Set<string>): ValidatedRow[] => {
+  const validateRows = (rows: CsvRow[], existingTexts?: Set<string>, existingPatterns?: Map<string, number>): ValidatedRow[] => {
     const seenInCsv = new Set<string>();
+    const seenPatternsInCsv = new Map<string, number>();
+
+    // Build a normalized pattern key (first 60 chars, lowered, whitespace-collapsed)
+    const patternKey = (text: string) =>
+      text.trim().toLowerCase().replace(/\s+/g, " ").slice(0, 60);
 
     // Common slug aliases for flexibility
     const slugAliases: Record<string, string> = {
@@ -315,15 +320,25 @@ const AdminQuestionsPage = () => {
       return d || "medium";
     };
 
+    // First pass: count patterns in CSV to detect template-style duplicates
+    for (const r of rows) {
+      const pk = patternKey(r.text);
+      if (pk) seenPatternsInCsv.set(pk, (seenPatternsInCsv.get(pk) || 0) + 1);
+    }
+    // Reset for second pass
+    const csvPatternCounts = new Map(seenPatternsInCsv);
+    seenPatternsInCsv.clear();
+
     return rows.map((r) => {
       const errors: string[] = [];
+      const warnings: string[] = [];
 
       if (!r.text.trim()) errors.push("Missing question text");
       if (!r.option_a.trim() || !r.option_b.trim()) {
         errors.push("At least options A and B required");
       }
 
-      // Duplicate checks
+      // Exact duplicate checks
       const normalizedText = r.text.trim().toLowerCase();
       if (normalizedText && existingTexts?.has(normalizedText)) {
         errors.push("Duplicate: already exists in database");
@@ -332,6 +347,18 @@ const AdminQuestionsPage = () => {
         errors.push("Duplicate: repeated in CSV");
       }
       seenInCsv.add(normalizedText);
+
+      // Template-style near-duplicate detection
+      const pk = patternKey(r.text);
+      if (pk) {
+        const csvCount = csvPatternCounts.get(pk) || 0;
+        const dbCount = existingPatterns?.get(pk) || 0;
+        if (csvCount > 3) {
+          errors.push(`Template duplicate: ${csvCount} similar questions in CSV (pattern: "${pk.slice(0, 40)}…")`);
+        } else if (dbCount >= 3) {
+          errors.push(`Template duplicate: ${dbCount} similar questions already in DB (pattern: "${pk.slice(0, 40)}…")`);
+        }
+      }
 
       // Accept A/B/C/D or 1/2/3/4 for correct answer
       const correctMap: Record<string, number> = { A: 0, B: 1, C: 2, D: 3, "1": 0, "2": 1, "3": 2, "4": 3 };
