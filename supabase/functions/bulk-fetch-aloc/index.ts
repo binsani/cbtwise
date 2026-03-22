@@ -18,6 +18,12 @@ const subjectSlugs = [
 
 const examTypes = ["utme", "waec", "neco"];
 
+const ALOC_BATCH_SIZES = [40, 25, 15];
+const ALOC_RETRIES_PER_SIZE = 3;
+const ALOC_TIMEOUT_BASE_MS = 8000;
+const ALOC_TIMEOUT_MAX_MS = 18000;
+const ALOC_RETRY_DELAYS_MS = [500, 1500, 3000];
+
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -26,6 +32,59 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: nu
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchAlocBatch(subjectSlug: string, examSlug: string, batchNumber: number) {
+  let lastError = `Batch ${batchNumber}: no response`;
+
+  for (const batchSize of ALOC_BATCH_SIZES) {
+    for (let attempt = 1; attempt <= ALOC_RETRIES_PER_SIZE; attempt++) {
+      const timeoutMs = Math.min(ALOC_TIMEOUT_BASE_MS * attempt, ALOC_TIMEOUT_MAX_MS);
+      const url = `https://questions.aloc.com.ng/api/v2/m/${batchSize}?subject=${subjectSlug}&type=${examSlug}`;
+      const startedAt = Date.now();
+
+      try {
+        const response = await fetchWithTimeout(url, {
+          headers: { Accept: "application/json", AccessToken: alocApiKey! },
+        }, timeoutMs);
+
+        const latencyMs = Date.now() - startedAt;
+        if (!response.ok) {
+          lastError = `Batch ${batchNumber}: HTTP ${response.status}`;
+          console.warn(`[bulk-fetch-aloc] ${subjectSlug}/${examSlug} batch=${batchNumber} size=${batchSize} attempt=${attempt} failed: ${response.status} (${latencyMs}ms)`);
+
+          // Retry transient errors quickly, otherwise try next (smaller) batch size
+          if ((response.status === 429 || response.status >= 500) && attempt < ALOC_RETRIES_PER_SIZE) {
+            await sleep(ALOC_RETRY_DELAYS_MS[Math.min(attempt - 1, ALOC_RETRY_DELAYS_MS.length - 1)]);
+            continue;
+          }
+          break;
+        }
+
+        const data = await response.json();
+        const rows = Array.isArray(data?.data) ? data.data : [];
+        console.log(`[bulk-fetch-aloc] ${subjectSlug}/${examSlug} batch=${batchNumber} size=${batchSize} attempt=${attempt} ok: ${rows.length} rows (${latencyMs}ms)`);
+        return { rows, error: null as string | null };
+      } catch (err) {
+        const isTimeout = err instanceof DOMException && err.name === "AbortError";
+        lastError = isTimeout
+          ? `Batch ${batchNumber}: timeout`
+          : `Batch ${batchNumber}: ${String(err)}`;
+
+        console.warn(`[bulk-fetch-aloc] ${subjectSlug}/${examSlug} batch=${batchNumber} size=${batchSize} attempt=${attempt} error: ${lastError}`);
+
+        if (attempt < ALOC_RETRIES_PER_SIZE) {
+          await sleep(ALOC_RETRY_DELAYS_MS[Math.min(attempt - 1, ALOC_RETRY_DELAYS_MS.length - 1)]);
+        }
+      }
+    }
+  }
+
+  return { rows: [] as any[], error: lastError };
 }
 
 serve(async (req) => {
@@ -92,8 +151,6 @@ serve(async (req) => {
   }
 
   const results: any[] = [];
-  const ALOC_MAX = 40;
-  const ALOC_TIMEOUT = 5000;
 
   for (const exam of allExams) {
     if (!filterExams.includes(exam.slug)) continue;
@@ -117,35 +174,27 @@ serve(async (req) => {
       const seenIds = new Set<number>();
 
       for (let batch = 0; batch < batchesPerSubject; batch++) {
-        const url = `https://questions.aloc.com.ng/api/v2/m/${ALOC_MAX}?subject=${subject.slug}&type=${exam.slug}`;
-        try {
-          const response = await fetchWithTimeout(url, {
-            headers: { Accept: "application/json", AccessToken: alocApiKey },
-          }, ALOC_TIMEOUT);
+        const { rows, error: batchError } = await fetchAlocBatch(subject.slug, exam.slug, batch + 1);
 
-          if (!response.ok) {
-            entry.errors.push(`Batch ${batch + 1}: HTTP ${response.status}`);
-            break;
-          }
-
-          const data = await response.json();
-          let newCount = 0;
-          for (const q of data.data || []) {
-            const qId = q.id || allRaw.length + 1;
-            if (!seenIds.has(qId)) {
-              seenIds.add(qId);
-              allRaw.push(q);
-              newCount++;
-            }
-          }
-          if (newCount === 0) break; // no new questions, stop
-        } catch (err) {
-          const msg = err instanceof DOMException && err.name === "AbortError"
-            ? `Batch ${batch + 1}: timeout`
-            : `Batch ${batch + 1}: ${err}`;
-          entry.errors.push(msg);
+        if (batchError && rows.length === 0) {
+          entry.errors.push(batchError);
           break;
         }
+
+        let newCount = 0;
+        for (const q of rows) {
+          const qId = q.id || allRaw.length + 1;
+          if (!seenIds.has(qId)) {
+            seenIds.add(qId);
+            allRaw.push(q);
+            newCount++;
+          }
+        }
+
+        if (newCount === 0) break; // no new questions, stop
+
+        // Short throttle to reduce upstream rate-limit pressure on free ALOC plan
+        await sleep(200);
       }
 
       entry.fetched = allRaw.length;
