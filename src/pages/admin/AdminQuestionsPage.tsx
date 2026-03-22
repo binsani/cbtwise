@@ -388,23 +388,43 @@ const AdminQuestionsPage = () => {
   const handleBulkImport = async () => {
     if (validRows.length === 0) { toast.error("No valid rows to import."); return; }
     setCsvStep("importing");
+    setImportFailedRows([]);
 
-    const payloads = validRows.map((r) => r.payload!);
-    // Insert in batches of 50
     let success = 0;
     let failed = 0;
-    for (let i = 0; i < payloads.length; i += 50) {
-      const batch = payloads.slice(i, i + 50);
-      const { error } = await supabase.from("questions").insert(batch);
+    const failedDetails: { row: number; text: string; error: string }[] = [];
+
+    // Insert row-by-row for precise error tracking
+    for (const r of validRows) {
+      const { error } = await supabase.from("questions").insert(r.payload!);
       if (error) {
-        failed += batch.length;
+        failed++;
+        failedDetails.push({ row: r.row, text: r.original.text.slice(0, 80), error: error.message });
       } else {
-        success += batch.length;
+        success++;
       }
     }
+
     setImportResult({ success, failed });
+    setImportFailedRows(failedDetails);
     setCsvStep("done");
     if (success > 0) fetchAll();
+  };
+
+  const downloadFailedReport = () => {
+    if (importFailedRows.length === 0) return;
+    const header = "row,question_text,error";
+    const lines = importFailedRows.map(
+      (r) => `${r.row},"${r.text.replace(/"/g, '""')}","${r.error.replace(/"/g, '""')}"`
+    );
+    const csv = [header, ...lines].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "failed_import_rows.csv";
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   // Bulk selection helpers
