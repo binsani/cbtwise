@@ -309,10 +309,10 @@ const AdminQuestionsPage = () => {
 
     const normalizeDifficulty = (raw: string): string => {
       const d = raw.trim().toLowerCase();
-      if (d === "easy" || d === "e" || d === "1") return "Easy";
-      if (d === "medium" || d === "m" || d === "2" || d === "moderate") return "Medium";
-      if (d === "hard" || d === "h" || d === "3" || d === "difficult") return "Hard";
-      return raw.trim() || "Medium";
+      if (d === "easy" || d === "e" || d === "1") return "easy";
+      if (d === "medium" || d === "m" || d === "2" || d === "moderate") return "medium";
+      if (d === "hard" || d === "h" || d === "3" || d === "difficult") return "hard";
+      return d || "medium";
     };
 
     return rows.map((r) => {
@@ -350,7 +350,7 @@ const AdminQuestionsPage = () => {
       }
 
       const difficulty = normalizeDifficulty(r.difficulty);
-      if (!["Easy", "Medium", "Hard"].includes(difficulty)) errors.push(`Invalid difficulty: "${r.difficulty}"`);
+      if (!["easy", "medium", "hard"].includes(difficulty)) errors.push(`Invalid difficulty: "${r.difficulty}" (allowed: easy, medium, hard)`);
 
       const year = r.year ? parseInt(r.year, 10) : null;
       if (r.year && (isNaN(year!) || year! < 1960 || year! > 2100)) errors.push(`Invalid year: "${r.year}"`);
