@@ -509,10 +509,10 @@ const AdminQuestionsPage = () => {
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === filtered.length) {
+    if (selectedIds.size === questions.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filtered.map((q) => q.id)));
+      setSelectedIds(new Set(questions.map((q) => q.id)));
     }
   };
 
@@ -534,8 +534,8 @@ const AdminQuestionsPage = () => {
     fetchAll();
   };
 
-  const allSelected = filtered.length > 0 && selectedIds.size === filtered.length;
-  const someSelected = selectedIds.size > 0 && selectedIds.size < filtered.length;
+  const allSelected = questions.length > 0 && selectedIds.size === questions.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < questions.length;
 
   // AI generator
   const openAiDialog = () => {
@@ -649,10 +649,10 @@ const AdminQuestionsPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {filtered.length === 0 ? (
+                  {questions.length === 0 ? (
                     <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No questions found.</td></tr>
                   ) : (
-                    filtered.map((q) => (
+                    questions.map((q) => (
                       <tr key={q.id} className={`hover:bg-muted/30 ${selectedIds.has(q.id) ? "bg-primary/5" : ""}`}>
                         <td className="px-3 py-3">
                           <Checkbox
@@ -679,7 +679,7 @@ const AdminQuestionsPage = () => {
               </table>
             </div>
           </div>
-          <div className="mt-4 text-center text-sm text-muted-foreground">Showing {filtered.length} of {questions.length} questions</div>
+          <div className="mt-4 text-center text-sm text-muted-foreground">Showing {questions.length} of {questions.length} questions</div>
         </>
       )}
 
