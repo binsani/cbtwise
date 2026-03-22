@@ -151,6 +151,7 @@ const AdminQuestionsPage = () => {
   const [csvStep, setCsvStep] = useState<"upload" | "preview" | "importing" | "done">("upload");
   const [csvValidated, setCsvValidated] = useState<ValidatedRow[]>([]);
   const [importResult, setImportResult] = useState({ success: 0, failed: 0 });
+  const [importFailedRows, setImportFailedRows] = useState<{ row: number; text: string; error: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // AI generator state
