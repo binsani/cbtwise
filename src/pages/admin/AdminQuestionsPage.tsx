@@ -239,6 +239,7 @@ const AdminQuestionsPage = () => {
     setCsvStep("upload");
     setCsvValidated([]);
     setImportResult({ success: 0, failed: 0 });
+    setImportFailedRows([]);
     setCsvDialogOpen(true);
   };
 
