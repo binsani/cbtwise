@@ -128,12 +128,17 @@ const TEMPLATE_CSV = `text,exam_slug,subject_slug,option_a,option_b,option_c,opt
 "What is the capital of Nigeria?",utme,geography,Lagos,Abuja,Kano,Ibadan,B,"Abuja has been the capital since 1991.",Capitals,Easy,2024
 "Solve: 2x + 4 = 10",utme,mathematics,x=2,x=3,x=4,x=5,B,"2x = 6, so x = 3.",Algebra,Medium,2024`;
 
+const PAGE_SIZE = 50;
+
 const AdminQuestionsPage = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [exams, setExams] = useState<ExamOption[]>([]);
   const [subjects, setSubjects] = useState<SubjectOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterExam, setFilterExam] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Question | null>(null);
@@ -160,18 +165,55 @@ const AdminQuestionsPage = () => {
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiResult, setAiResult] = useState<{ saved: number; failed: number; questions: any[] } | null>(null);
 
-  useEffect(() => { fetchAll(); }, []);
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Reset page on filter change
+  useEffect(() => { setCurrentPage(1); }, [filterExam]);
+
+  useEffect(() => { fetchAll(); }, [currentPage, debouncedSearch, filterExam]);
+
+  // Load exams/subjects once
+  const [metaLoaded, setMetaLoaded] = useState(false);
+  useEffect(() => {
+    (async () => {
+      const [eRes, sRes] = await Promise.all([
+        supabase.from("exams").select("id, name, slug"),
+        supabase.from("subjects").select("id, name, exam_id, slug"),
+      ]);
+      setExams((eRes.data ?? []) as ExamOption[]);
+      setSubjects((sRes.data ?? []) as SubjectOption[]);
+      setMetaLoaded(true);
+    })();
+  }, []);
 
   const fetchAll = async () => {
     setLoading(true);
-    const [qRes, eRes, sRes] = await Promise.all([
-      supabase.from("questions").select("*", { count: "exact" }).order("created_at", { ascending: false }).limit(1000),
-      supabase.from("exams").select("id, name, slug"),
-      supabase.from("subjects").select("id, name, exam_id, slug"),
-    ]);
-    setQuestions(qRes.data ?? []);
-    setExams((eRes.data ?? []) as ExamOption[]);
-    setSubjects((sRes.data ?? []) as SubjectOption[]);
+    const from = (currentPage - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    let query = supabase.from("questions").select("*", { count: "exact" }).order("created_at", { ascending: false });
+
+    // Server-side exam filter
+    if (filterExam !== "all") {
+      const exam = exams.find(e => e.slug === filterExam);
+      if (exam) query = query.eq("exam_id", exam.id);
+    }
+
+    // Server-side search
+    if (debouncedSearch.trim()) {
+      query = query.ilike("text", `%${debouncedSearch.trim()}%`);
+    }
+
+    const { data, count } = await query.range(from, to);
+    setQuestions(data ?? []);
+    setTotalCount(count ?? 0);
     setLoading(false);
   };
 
@@ -184,11 +226,7 @@ const AdminQuestionsPage = () => {
     subjectBySlugAndExam.set(`${s.exam_id}::${s.name.toLowerCase()}`, s);
   });
 
-  const filtered = questions.filter((q) => {
-    const matchSearch = q.text.toLowerCase().includes(search.toLowerCase()) || (subjectMap[q.subject_id]?.name ?? "").toLowerCase().includes(search.toLowerCase());
-    const matchExam = filterExam === "all" || examMap[q.exam_id]?.slug === filterExam;
-    return matchSearch && matchExam;
-  });
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   const filteredSubjects = form.exam_id ? subjects.filter((s) => s.exam_id === form.exam_id) : subjects;
 
