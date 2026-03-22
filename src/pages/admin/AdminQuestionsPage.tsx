@@ -151,6 +151,7 @@ const AdminQuestionsPage = () => {
   const [csvStep, setCsvStep] = useState<"upload" | "preview" | "importing" | "done">("upload");
   const [csvValidated, setCsvValidated] = useState<ValidatedRow[]>([]);
   const [importResult, setImportResult] = useState({ success: 0, failed: 0 });
+  const [importFailedRows, setImportFailedRows] = useState<{ row: number; text: string; error: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // AI generator state
@@ -238,6 +239,7 @@ const AdminQuestionsPage = () => {
     setCsvStep("upload");
     setCsvValidated([]);
     setImportResult({ success: 0, failed: 0 });
+    setImportFailedRows([]);
     setCsvDialogOpen(true);
   };
 
@@ -386,23 +388,43 @@ const AdminQuestionsPage = () => {
   const handleBulkImport = async () => {
     if (validRows.length === 0) { toast.error("No valid rows to import."); return; }
     setCsvStep("importing");
+    setImportFailedRows([]);
 
-    const payloads = validRows.map((r) => r.payload!);
-    // Insert in batches of 50
     let success = 0;
     let failed = 0;
-    for (let i = 0; i < payloads.length; i += 50) {
-      const batch = payloads.slice(i, i + 50);
-      const { error } = await supabase.from("questions").insert(batch);
+    const failedDetails: { row: number; text: string; error: string }[] = [];
+
+    // Insert row-by-row for precise error tracking
+    for (const r of validRows) {
+      const { error } = await supabase.from("questions").insert(r.payload!);
       if (error) {
-        failed += batch.length;
+        failed++;
+        failedDetails.push({ row: r.row, text: r.original.text.slice(0, 80), error: error.message });
       } else {
-        success += batch.length;
+        success++;
       }
     }
+
     setImportResult({ success, failed });
+    setImportFailedRows(failedDetails);
     setCsvStep("done");
     if (success > 0) fetchAll();
+  };
+
+  const downloadFailedReport = () => {
+    if (importFailedRows.length === 0) return;
+    const header = "row,question_text,error";
+    const lines = importFailedRows.map(
+      (r) => `${r.row},"${r.text.replace(/"/g, '""')}","${r.error.replace(/"/g, '""')}"`
+    );
+    const csv = [header, ...lines].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "failed_import_rows.csv";
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   // Bulk selection helpers
@@ -769,10 +791,10 @@ const AdminQuestionsPage = () => {
           )}
 
           {csvStep === "done" && (
-            <div className="flex flex-col items-center py-8">
+            <div className="flex flex-col items-center py-6">
               <CheckCircle2 className="mb-4 h-12 w-12 text-primary" />
               <h3 className="mb-2 font-display text-lg font-bold">Import Complete</h3>
-              <div className="flex gap-6 text-center">
+              <div className="flex gap-6 text-center mb-4">
                 <div>
                   <div className="font-display text-2xl font-bold text-primary">{importResult.success}</div>
                   <div className="text-xs text-muted-foreground">Imported</div>
@@ -784,6 +806,24 @@ const AdminQuestionsPage = () => {
                   </div>
                 )}
               </div>
+              {importFailedRows.length > 0 && (
+                <div className="w-full space-y-3">
+                  <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                    <h4 className="mb-2 text-sm font-semibold text-destructive">Failed Rows</h4>
+                    <div className="max-h-32 overflow-y-auto space-y-1">
+                      {importFailedRows.map((r) => (
+                        <div key={r.row} className="flex items-start gap-2 text-xs">
+                          <XCircle className="mt-0.5 h-3 w-3 shrink-0 text-destructive" />
+                          <span><strong>Row {r.row}:</strong> {r.error}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={downloadFailedReport} className="w-full">
+                    <Download className="mr-1 h-4 w-4" /> Download Failed Rows Report
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
