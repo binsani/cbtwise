@@ -283,12 +283,42 @@ const AdminQuestionsPage = () => {
 
   const validateRows = (rows: CsvRow[], existingTexts?: Set<string>): ValidatedRow[] => {
     const seenInCsv = new Set<string>();
+
+    // Common slug aliases for flexibility
+    const slugAliases: Record<string, string> = {
+      "crs": "crk", "christian_religious_studies": "crk", "christian_religious_knowledge": "crk",
+      "irs": "irk", "islamic_religious_studies": "irk", "islamic_religious_knowledge": "irk",
+      "maths": "mathematics", "math": "mathematics",
+      "eng": "english", "english_language": "english",
+      "lit": "literature", "literature_in_english": "literature", "englishlit": "literature",
+      "phy": "physics", "chem": "chemistry", "bio": "biology",
+      "govt": "government", "gov": "government",
+      "geo": "geography", "econs": "economics", "econ": "economics",
+      "acct": "accounting", "comm": "commerce",
+      "civic_edu": "civic_education", "civics": "civic_education", "civiledu": "civic_education",
+      "computer_science": "computer", "comp": "computer",
+      "agric": "agriculture", "current_affairs": "currentaffairs",
+    };
+
+    const normalizeSlug = (raw: string) => {
+      const s = raw.trim().toLowerCase().replace(/[\s-]+/g, "_");
+      return slugAliases[s] || s;
+    };
+
+    const normalizeDifficulty = (raw: string): string => {
+      const d = raw.trim().toLowerCase();
+      if (d === "easy" || d === "e" || d === "1") return "Easy";
+      if (d === "medium" || d === "m" || d === "2" || d === "moderate") return "Medium";
+      if (d === "hard" || d === "h" || d === "3" || d === "difficult") return "Hard";
+      return raw.trim() || "Medium";
+    };
+
     return rows.map((r) => {
       const errors: string[] = [];
 
       if (!r.text.trim()) errors.push("Missing question text");
-      if (!r.option_a.trim() || !r.option_b.trim() || !r.option_c.trim() || !r.option_d.trim()) {
-        errors.push("All 4 options required");
+      if (!r.option_a.trim() || !r.option_b.trim()) {
+        errors.push("At least options A and B required");
       }
 
       // Duplicate checks
@@ -301,24 +331,29 @@ const AdminQuestionsPage = () => {
       }
       seenInCsv.add(normalizedText);
 
-      const correctMap: Record<string, number> = { A: 0, B: 1, C: 2, D: 3 };
+      // Accept A/B/C/D or 1/2/3/4 for correct answer
+      const correctMap: Record<string, number> = { A: 0, B: 1, C: 2, D: 3, "1": 0, "2": 1, "3": 2, "4": 3 };
       const correctKey = r.correct_option.trim().toUpperCase();
-      if (!(correctKey in correctMap)) errors.push("correct_option must be A, B, C, or D");
+      if (!(correctKey in correctMap)) errors.push("correct_option must be A/B/C/D or 1/2/3/4");
 
-      const exam = examBySlug[r.exam_slug.toLowerCase()];
+      const examSlug = normalizeSlug(r.exam_slug);
+      const exam = examBySlug[examSlug];
       if (!exam) errors.push(`Unknown exam: "${r.exam_slug}"`);
 
       let subject: SubjectOption | undefined;
       if (exam) {
-        subject = subjectBySlugAndExam.get(`${exam.id}::${r.subject_slug.toLowerCase()}`);
+        const subjectSlug = normalizeSlug(r.subject_slug);
+        subject = subjectBySlugAndExam.get(`${exam.id}::${subjectSlug}`);
         if (!subject) errors.push(`Unknown subject: "${r.subject_slug}" for exam "${r.exam_slug}"`);
       }
 
-      const difficulty = r.difficulty || "Medium";
-      if (!["Easy", "Medium", "Hard"].includes(difficulty)) errors.push(`Invalid difficulty: "${difficulty}"`);
+      const difficulty = normalizeDifficulty(r.difficulty);
+      if (!["Easy", "Medium", "Hard"].includes(difficulty)) errors.push(`Invalid difficulty: "${r.difficulty}"`);
 
       const year = r.year ? parseInt(r.year, 10) : null;
       if (r.year && (isNaN(year!) || year! < 1960 || year! > 2100)) errors.push(`Invalid year: "${r.year}"`);
+
+      const options = [r.option_a.trim(), r.option_b.trim(), r.option_c.trim(), r.option_d.trim()].filter(Boolean);
 
       const valid = errors.length === 0;
       return {
@@ -332,7 +367,7 @@ const AdminQuestionsPage = () => {
                 text: r.text.trim(),
                 exam_id: exam.id,
                 subject_id: subject.id,
-                options: [r.option_a.trim(), r.option_b.trim(), r.option_c.trim(), r.option_d.trim()],
+                options,
                 correct_index: correctMap[correctKey],
                 explanation: r.explanation.trim() || null,
                 topic: r.topic.trim() || null,
