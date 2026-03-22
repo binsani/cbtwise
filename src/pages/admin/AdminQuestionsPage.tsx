@@ -165,7 +165,7 @@ const AdminQuestionsPage = () => {
   const fetchAll = async () => {
     setLoading(true);
     const [qRes, eRes, sRes] = await Promise.all([
-      supabase.from("questions").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.from("questions").select("*", { count: "exact" }).order("created_at", { ascending: false }).limit(1000),
       supabase.from("exams").select("id, name, slug"),
       supabase.from("subjects").select("id, name, exam_id, slug"),
     ]);
