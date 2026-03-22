@@ -581,7 +581,7 @@ const AdminQuestionsPage = () => {
   return (
     <AdminLayout
       title="Questions"
-      description={`${questions.length} questions in bank`}
+      description={`${totalCount} questions in bank`}
       actions={
         <div className="flex gap-2">
           <Button onClick={openAiDialog} size="sm" variant="secondary">
