@@ -791,10 +791,10 @@ const AdminQuestionsPage = () => {
           )}
 
           {csvStep === "done" && (
-            <div className="flex flex-col items-center py-8">
+            <div className="flex flex-col items-center py-6">
               <CheckCircle2 className="mb-4 h-12 w-12 text-primary" />
               <h3 className="mb-2 font-display text-lg font-bold">Import Complete</h3>
-              <div className="flex gap-6 text-center">
+              <div className="flex gap-6 text-center mb-4">
                 <div>
                   <div className="font-display text-2xl font-bold text-primary">{importResult.success}</div>
                   <div className="text-xs text-muted-foreground">Imported</div>
@@ -806,6 +806,24 @@ const AdminQuestionsPage = () => {
                   </div>
                 )}
               </div>
+              {importFailedRows.length > 0 && (
+                <div className="w-full space-y-3">
+                  <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                    <h4 className="mb-2 text-sm font-semibold text-destructive">Failed Rows</h4>
+                    <div className="max-h-32 overflow-y-auto space-y-1">
+                      {importFailedRows.map((r) => (
+                        <div key={r.row} className="flex items-start gap-2 text-xs">
+                          <XCircle className="mt-0.5 h-3 w-3 shrink-0 text-destructive" />
+                          <span><strong>Row {r.row}:</strong> {r.error}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={downloadFailedReport} className="w-full">
+                    <Download className="mr-1 h-4 w-4" /> Download Failed Rows Report
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
