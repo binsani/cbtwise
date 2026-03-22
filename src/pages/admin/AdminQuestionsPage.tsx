@@ -266,15 +266,22 @@ const AdminQuestionsPage = () => {
       if (rows.length === 0) {
         toast.error("No data rows found in CSV."); return;
       }
-      // Fetch all existing question texts for duplicate detection
+      // Fetch existing question texts + patterns for duplicate detection
       const { data: existingQuestions } = await supabase
         .from("questions")
         .select("text")
+        .eq("is_active", true)
         .limit(10000);
       const existingTexts = new Set(
         (existingQuestions ?? []).map((q) => q.text.trim().toLowerCase())
       );
-      const validated = validateRows(rows, existingTexts);
+      // Build pattern counts from existing DB questions
+      const existingPatterns = new Map<string, number>();
+      for (const q of existingQuestions ?? []) {
+        const pk = q.text.trim().toLowerCase().replace(/\s+/g, " ").slice(0, 60);
+        existingPatterns.set(pk, (existingPatterns.get(pk) || 0) + 1);
+      }
+      const validated = validateRows(rows, existingTexts, existingPatterns);
       setCsvValidated(validated);
       setCsvStep("preview");
     };
