@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Edit, Trash2, Loader2, Upload, Download, CheckCircle2, XCircle, FileSpreadsheet, Square, CheckSquare, MinusSquare, Sparkles } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Loader2, Upload, Download, CheckCircle2, XCircle, FileSpreadsheet, Square, CheckSquare, MinusSquare, Sparkles, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
@@ -128,12 +128,17 @@ const TEMPLATE_CSV = `text,exam_slug,subject_slug,option_a,option_b,option_c,opt
 "What is the capital of Nigeria?",utme,geography,Lagos,Abuja,Kano,Ibadan,B,"Abuja has been the capital since 1991.",Capitals,Easy,2024
 "Solve: 2x + 4 = 10",utme,mathematics,x=2,x=3,x=4,x=5,B,"2x = 6, so x = 3.",Algebra,Medium,2024`;
 
+const PAGE_SIZE = 50;
+
 const AdminQuestionsPage = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [exams, setExams] = useState<ExamOption[]>([]);
   const [subjects, setSubjects] = useState<SubjectOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterExam, setFilterExam] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Question | null>(null);
@@ -160,18 +165,55 @@ const AdminQuestionsPage = () => {
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiResult, setAiResult] = useState<{ saved: number; failed: number; questions: any[] } | null>(null);
 
-  useEffect(() => { fetchAll(); }, []);
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Reset page on filter change
+  useEffect(() => { setCurrentPage(1); }, [filterExam]);
+
+  useEffect(() => { fetchAll(); }, [currentPage, debouncedSearch, filterExam]);
+
+  // Load exams/subjects once
+  const [metaLoaded, setMetaLoaded] = useState(false);
+  useEffect(() => {
+    (async () => {
+      const [eRes, sRes] = await Promise.all([
+        supabase.from("exams").select("id, name, slug"),
+        supabase.from("subjects").select("id, name, exam_id, slug"),
+      ]);
+      setExams((eRes.data ?? []) as ExamOption[]);
+      setSubjects((sRes.data ?? []) as SubjectOption[]);
+      setMetaLoaded(true);
+    })();
+  }, []);
 
   const fetchAll = async () => {
     setLoading(true);
-    const [qRes, eRes, sRes] = await Promise.all([
-      supabase.from("questions").select("*", { count: "exact" }).order("created_at", { ascending: false }).limit(1000),
-      supabase.from("exams").select("id, name, slug"),
-      supabase.from("subjects").select("id, name, exam_id, slug"),
-    ]);
-    setQuestions(qRes.data ?? []);
-    setExams((eRes.data ?? []) as ExamOption[]);
-    setSubjects((sRes.data ?? []) as SubjectOption[]);
+    const from = (currentPage - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    let query = supabase.from("questions").select("*", { count: "exact" }).order("created_at", { ascending: false });
+
+    // Server-side exam filter
+    if (filterExam !== "all") {
+      const exam = exams.find(e => e.slug === filterExam);
+      if (exam) query = query.eq("exam_id", exam.id);
+    }
+
+    // Server-side search
+    if (debouncedSearch.trim()) {
+      query = query.ilike("text", `%${debouncedSearch.trim()}%`);
+    }
+
+    const { data, count } = await query.range(from, to);
+    setQuestions(data ?? []);
+    setTotalCount(count ?? 0);
     setLoading(false);
   };
 
@@ -184,11 +226,7 @@ const AdminQuestionsPage = () => {
     subjectBySlugAndExam.set(`${s.exam_id}::${s.name.toLowerCase()}`, s);
   });
 
-  const filtered = questions.filter((q) => {
-    const matchSearch = q.text.toLowerCase().includes(search.toLowerCase()) || (subjectMap[q.subject_id]?.name ?? "").toLowerCase().includes(search.toLowerCase());
-    const matchExam = filterExam === "all" || examMap[q.exam_id]?.slug === filterExam;
-    return matchSearch && matchExam;
-  });
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   const filteredSubjects = form.exam_id ? subjects.filter((s) => s.exam_id === form.exam_id) : subjects;
 
@@ -471,10 +509,10 @@ const AdminQuestionsPage = () => {
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === filtered.length) {
+    if (selectedIds.size === questions.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filtered.map((q) => q.id)));
+      setSelectedIds(new Set(questions.map((q) => q.id)));
     }
   };
 
@@ -496,8 +534,8 @@ const AdminQuestionsPage = () => {
     fetchAll();
   };
 
-  const allSelected = filtered.length > 0 && selectedIds.size === filtered.length;
-  const someSelected = selectedIds.size > 0 && selectedIds.size < filtered.length;
+  const allSelected = questions.length > 0 && selectedIds.size === questions.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < questions.length;
 
   // AI generator
   const openAiDialog = () => {
@@ -543,7 +581,7 @@ const AdminQuestionsPage = () => {
   return (
     <AdminLayout
       title="Questions"
-      description={`${questions.length} questions in bank`}
+      description={`${totalCount} questions in bank`}
       actions={
         <div className="flex gap-2">
           <Button onClick={openAiDialog} size="sm" variant="secondary">
@@ -611,10 +649,10 @@ const AdminQuestionsPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {filtered.length === 0 ? (
+                  {questions.length === 0 ? (
                     <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No questions found.</td></tr>
                   ) : (
-                    filtered.map((q) => (
+                    questions.map((q) => (
                       <tr key={q.id} className={`hover:bg-muted/30 ${selectedIds.has(q.id) ? "bg-primary/5" : ""}`}>
                         <td className="px-3 py-3">
                           <Checkbox
@@ -641,7 +679,27 @@ const AdminQuestionsPage = () => {
               </table>
             </div>
           </div>
-          <div className="mt-4 text-center text-sm text-muted-foreground">Showing {filtered.length} of {questions.length} questions</div>
+          {/* Pagination */}
+          <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+            <div className="text-sm text-muted-foreground">
+              Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalCount)} of {totalCount} questions
+            </div>
+            <div className="flex items-center gap-1">
+              <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === 1} onClick={() => setCurrentPage(1)}>
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="px-3 text-sm font-medium">Page {currentPage} of {totalPages}</span>
+              <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === totalPages} onClick={() => setCurrentPage(totalPages)}>
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </>
       )}
 
