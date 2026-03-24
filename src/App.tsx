@@ -49,6 +49,12 @@ const AdminBulkSeeder = lazy(() => import("./pages/admin/AdminBulkSeeder"));
 
 const queryClient = new QueryClient();
 
+const PageLoader = () => (
+  <div className="flex min-h-screen items-center justify-center bg-background">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -56,45 +62,49 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/exams" element={<ProtectedRoute><ExamSelection /></ProtectedRoute>} />
-            <Route path="/exams/:examId/subjects" element={<ProtectedRoute><SubjectSelection /></ProtectedRoute>} />
-            <Route path="/practice" element={<ProtectedRoute><PracticeMode /></ProtectedRoute>} />
-            <Route path="/study" element={<ProtectedRoute><StudyMode /></ProtectedRoute>} />
-            <Route path="/mock-exam" element={<ProtectedRoute><CBTExam /></ProtectedRoute>} />
-            <Route path="/mock-setup" element={<ProtectedRoute><MockExamSetup /></ProtectedRoute>} />
-            <Route path="/results" element={<ProtectedRoute><Results /></ProtectedRoute>} />
-            <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/exams" element={<ProtectedRoute><ExamSelection /></ProtectedRoute>} />
+              <Route path="/exams/:examId/subjects" element={<ProtectedRoute><SubjectSelection /></ProtectedRoute>} />
+              <Route path="/practice" element={<ProtectedRoute><PracticeMode /></ProtectedRoute>} />
+              <Route path="/study" element={<ProtectedRoute><StudyMode /></ProtectedRoute>} />
+              <Route path="/mock-exam" element={<ProtectedRoute><CBTExam /></ProtectedRoute>} />
+              <Route path="/mock-setup" element={<ProtectedRoute><MockExamSetup /></ProtectedRoute>} />
+              <Route path="/results" element={<ProtectedRoute><Results /></ProtectedRoute>} />
+              <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
-            {/* Admin routes */}
-            <Route path="/admin" element={<AdminRoute><AdminOverview /></AdminRoute>} />
-            <Route path="/admin/questions" element={<AdminRoute><AdminQuestionsPage /></AdminRoute>} />
-            <Route path="/admin/exams" element={<AdminRoute><AdminExams /></AdminRoute>} />
-            <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-            <Route path="/admin/subscriptions" element={<AdminRoute><AdminSubscriptions /></AdminRoute>} />
-            <Route path="/admin/analytics" element={<AdminRoute><AdminAnalytics /></AdminRoute>} />
-            <Route path="/admin/messages" element={<AdminRoute><AdminMessages /></AdminRoute>} />
-            <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
-            <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
-            <Route path="/admin/purchase-codes" element={<AdminRoute><AdminPurchaseCodes /></AdminRoute>} />
-            <Route path="/admin/bulk-seeder" element={<AdminRoute><AdminBulkSeeder /></AdminRoute>} />
+              {/* Admin routes */}
+              <Route path="/admin" element={<AdminRoute><AdminOverview /></AdminRoute>} />
+              <Route path="/admin/questions" element={<AdminRoute><AdminQuestionsPage /></AdminRoute>} />
+              <Route path="/admin/exams" element={<AdminRoute><AdminExams /></AdminRoute>} />
+              <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+              <Route path="/admin/subscriptions" element={<AdminRoute><AdminSubscriptions /></AdminRoute>} />
+              <Route path="/admin/analytics" element={<AdminRoute><AdminAnalytics /></AdminRoute>} />
+              <Route path="/admin/messages" element={<AdminRoute><AdminMessages /></AdminRoute>} />
+              <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
+              <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
+              <Route path="/admin/purchase-codes" element={<AdminRoute><AdminPurchaseCodes /></AdminRoute>} />
+              <Route path="/admin/bulk-seeder" element={<AdminRoute><AdminBulkSeeder /></AdminRoute>} />
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <TawkToChat />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+          <Suspense fallback={null}>
+            <TawkToChat />
+          </Suspense>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
