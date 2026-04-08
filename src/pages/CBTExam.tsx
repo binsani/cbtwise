@@ -274,18 +274,18 @@ const CBTExam = () => {
     <div className="flex min-h-screen flex-col bg-background">
       {/* Top Bar */}
       <div className="sticky top-0 z-50 border-b border-border bg-card shadow-sm">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <button
               onClick={() => setShowEndModal(true)}
-              className="flex items-center gap-1.5 rounded-lg bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/20 transition-colors"
+              className="flex items-center gap-1 sm:gap-1.5 rounded-lg bg-destructive/10 px-2 sm:px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/20 transition-colors shrink-0"
             >
               <LogOut className="h-3.5 w-3.5" />
-              End Exam
+              <span className="hidden sm:inline">End Exam</span><span className="sm:hidden">End</span>
             </button>
-            <div>
-              <div className="font-display text-sm font-bold">
-                {exam.toUpperCase()} Mock Exam
+            <div className="min-w-0">
+              <div className="font-display text-xs sm:text-sm font-bold truncate">
+                {exam.toUpperCase()} Mock
                 {questions.length < totalQuestions && (
                   <span className="ml-2 text-xs font-normal text-muted-foreground">({questions.length} questions loaded)</span>
                 )}
@@ -330,14 +330,14 @@ const CBTExam = () => {
               Report
             </button>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <span className="hidden sm:inline text-xs text-muted-foreground font-medium">
               {answeredCount}/{questions.length} answered
             </span>
-            <div className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-bold ${
+            <div className={`flex items-center gap-1 sm:gap-1.5 rounded-full px-2.5 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm font-bold ${
               isUrgent ? "bg-destructive text-destructive-foreground animate-pulse" : "bg-primary text-primary-foreground"
             }`}>
-              <Clock className="h-4 w-4" />
+              <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               {formatTime(timeLeft)}
             </div>
           </div>
@@ -509,27 +509,30 @@ const CBTExam = () => {
       </div>
 
       {/* Fixed Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card px-4 py-3 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-        <div className="mx-auto flex max-w-2xl items-center justify-center gap-3">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card px-4 py-2 sm:py-3 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+        <div className="mx-auto flex max-w-2xl items-center justify-center gap-2 sm:gap-3">
           <Button
             variant="outline"
             onClick={() => setCurrent(Math.max(0, current - 1))}
             disabled={current === 0}
-            className="min-w-[110px]"
+            className="min-w-0 flex-1 sm:min-w-[110px] sm:flex-none px-3 sm:px-4"
+            size="sm"
           >
-            <ChevronLeft className="mr-1 h-4 w-4" /> Previous
+            <ChevronLeft className="mr-1 h-4 w-4" /> <span className="hidden sm:inline">Previous</span><span className="sm:hidden">Prev</span>
           </Button>
           <Button
             variant="secondary"
             onClick={() => setShowSubmitModal(true)}
-            className="min-w-[110px]"
+            className="min-w-0 flex-1 sm:min-w-[110px] sm:flex-none px-3 sm:px-4"
+            size="sm"
           >
             <CheckCircle2 className="mr-1 h-4 w-4" /> Submit
           </Button>
           <Button
             onClick={() => setCurrent(Math.min(questions.length - 1, current + 1))}
             disabled={current === questions.length - 1}
-            className="min-w-[110px]"
+            className="min-w-0 flex-1 sm:min-w-[110px] sm:flex-none px-3 sm:px-4"
+            size="sm"
           >
             Next <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
