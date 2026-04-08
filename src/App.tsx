@@ -47,7 +47,14 @@ const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications")
 const AdminPurchaseCodes = lazy(() => import("./pages/admin/AdminPurchaseCodes"));
 const AdminBulkSeeder = lazy(() => import("./pages/admin/AdminBulkSeeder"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes cache
+    },
+  },
+});
 
 const PageLoader = () => (
   <div className="flex min-h-screen items-center justify-center bg-background">
