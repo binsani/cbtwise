@@ -9,7 +9,7 @@ const Footer = forwardRef<HTMLElement>(function Footer(_, ref) {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <Link to="/" className="mb-4 flex items-center gap-2">
-              <img src={cbtwiseLogo} alt="CBTWise logo" className="h-8 w-8 rounded-lg object-contain" />
+              <img src={cbtwiseLogo} alt="CBTWise logo" loading="lazy" decoding="async" width={32} height={32} className="h-8 w-8 rounded-lg object-contain" />
               <span className="font-display text-lg font-bold">CBTWise</span>
             </Link>
             <p className="text-sm text-muted-foreground">

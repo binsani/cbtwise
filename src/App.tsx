@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -62,7 +62,23 @@ const PageLoader = () => (
   </div>
 );
 
-const App = () => (
+// Prefetch critical routes during browser idle time for snappier navigation
+const prefetchCriticalRoutes = () => {
+  const idle = (cb: () => void) =>
+    "requestIdleCallback" in window
+      ? (window as any).requestIdleCallback(cb, { timeout: 2000 })
+      : setTimeout(cb, 1500);
+  idle(() => {
+    import("./pages/Login");
+    import("./pages/Signup");
+    import("./pages/Dashboard");
+    import("./pages/ExamSelection");
+  });
+};
+
+const App = () => {
+  useEffect(() => { prefetchCriticalRoutes(); }, []);
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -116,6 +132,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
