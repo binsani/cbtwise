@@ -76,7 +76,9 @@ const prefetchCriticalRoutes = () => {
   });
 };
 
-const App = () => (
+const App = () => {
+  useEffect(() => { prefetchCriticalRoutes(); }, []);
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
